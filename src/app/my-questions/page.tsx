@@ -181,12 +181,12 @@ export default function MyQuestionsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mx-auto"></div>
+            <p className="mt-4 text-muted-foreground font-inter">Loading...</p>
           </div>
         </div>
       </div>
@@ -198,21 +198,29 @@ export default function MyQuestionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Questions</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-foreground font-inter">My Questions</h1>
+            <p className="text-muted-foreground mt-1 font-inter">
               {pagination.total} questions • {pagination.total > 0 ? `${Math.ceil(pagination.total / pagination.limit)} pages` : 'No questions yet'}
             </p>
           </div>
           <div className="flex gap-2">
             <Link href="/questions/ask">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue hover:bg-blue-light font-inter">
                 <Plus className="h-4 w-4 mr-2" />
                 Ask New Question
               </Button>
@@ -221,17 +229,17 @@ export default function MyQuestionsPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-6 font-inter">
           {/* Search */}
           <div className="mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Search your questions by title, content, or tags..."
                 defaultValue={search}
                 onChange={(e) => debouncedSearch(e.target.value)}
-                className="pl-10 pr-4"
+                className="pl-10 pr-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground shadow-sm w-full font-inter"
               />
             </div>
           </div>
@@ -240,11 +248,11 @@ export default function MyQuestionsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter</label>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
               >
                 <option value="all">All Questions</option>
                 <option value="unanswered">Unanswered</option>
@@ -255,11 +263,11 @@ export default function MyQuestionsPage() {
 
             {/* Sort */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">Sort</label>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -275,7 +283,7 @@ export default function MyQuestionsPage() {
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="w-full"
+                  className="w-full font-inter"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Filters
@@ -287,22 +295,22 @@ export default function MyQuestionsPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <p className="text-red-800">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 font-inter">
+            <p className="text-red-800 font-inter">{error}</p>
           </div>
         )}
 
         {/* Questions List */}
         {loading ? (
           <div className="text-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-2 text-gray-600">Loading your questions...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue font-inter" />
+            <p className="mt-2 text-muted-foreground font-inter">Loading your questions...</p>
           </div>
         ) : questions.length === 0 ? (
           <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">No questions found</h3>
-            <p className="mt-2 text-gray-600">
+            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground font-inter" />
+            <h3 className="mt-4 text-lg font-medium text-foreground font-inter">No questions found</h3>
+            <p className="mt-2 text-muted-foreground font-inter">
               {hasActiveFilters 
                 ? 'Try adjusting your search or filters'
                 : "You haven't asked any questions yet. Start contributing to the community!"
@@ -310,7 +318,7 @@ export default function MyQuestionsPage() {
             </p>
             {!hasActiveFilters && (
               <Link href="/questions/ask" className="mt-4 inline-block">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-blue hover:bg-blue-light font-inter">
                   <Plus className="h-4 w-4 mr-2" />
                   Ask Your First Question
                 </Button>
@@ -322,25 +330,25 @@ export default function MyQuestionsPage() {
             {questions.map((question) => (
               <div
                 key={question._id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="bg-card rounded-2xl shadow-md border border-border p-6 hover:border-blue hover:shadow-lg transition-all font-inter"
               >
                 <div className="flex gap-4">
                   {/* Stats */}
-                  <div className="flex flex-col items-center space-y-2 text-sm text-gray-500 min-w-[80px]">
+                  <div className="flex flex-col items-center space-y-2 text-xs text-muted-foreground min-w-[80px] font-inter">
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-blue font-inter">
                         {getVoteCount(question.votes)}
                       </div>
                       <div>votes</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-emerald font-inter">
                         {getAnswerCount(question)}
                       </div>
                       <div>answers</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-orange font-inter">
                         {question.views}
                       </div>
                       <div>views</div>
@@ -352,25 +360,25 @@ export default function MyQuestionsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <Link 
                         href={`/questions/${question._id}`}
-                        className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                        className="text-lg font-semibold text-foreground hover:text-blue transition-colors font-inter"
                       >
                         {question.title}
                       </Link>
                       <div className="flex items-center gap-2">
                         {getAnswerCount(question) > 0 && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-inter">
                             Answered
                           </span>
                         )}
                         {question.acceptedAnswer && (
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-blue/10 text-blue text-xs px-2 py-1 rounded-full font-inter">
                             Accepted
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-3 line-clamp-2">
+                    <p className="text-muted-foreground mb-3 line-clamp-2 font-inter">
                       {question.content.replace(/<[^>]*>/g, '').substring(0, 200)}...
                     </p>
 
@@ -378,7 +386,7 @@ export default function MyQuestionsPage() {
                     <div className="flex flex-wrap gap-2 mb-3">
                       {question.tags.map((tag) => (
                         <Link key={tag} href={`/tags/${tag}`}>
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200 cursor-pointer">
+                          <span className="bg-blue/10 text-blue text-xs px-2 py-1 rounded hover:bg-blue/20 cursor-pointer font-inter">
                             {tag}
                           </span>
                         </Link>
@@ -386,7 +394,7 @@ export default function MyQuestionsPage() {
                     </div>
 
                     {/* Meta and Actions */}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-inter">
                       <div className="flex items-center space-x-4">
                         <span>
                           Asked {formatDate(question.createdAt)}
@@ -400,7 +408,7 @@ export default function MyQuestionsPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Link href={`/questions/${question._id}/edit`}>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="font-inter">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -409,7 +417,7 @@ export default function MyQuestionsPage() {
                           size="sm"
                           onClick={() => handleDeleteQuestion(question._id)}
                           disabled={deletingQuestion === question._id}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 font-inter"
                         >
                           {deletingQuestion === question._id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -434,6 +442,7 @@ export default function MyQuestionsPage() {
                 variant="outline"
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
+                className="font-inter"
               >
                 Previous
               </Button>
@@ -445,6 +454,7 @@ export default function MyQuestionsPage() {
                     key={pageNum}
                     variant={page === pageNum ? "default" : "outline"}
                     onClick={() => setPage(pageNum)}
+                    className="font-inter"
                   >
                     {pageNum}
                   </Button>
@@ -455,12 +465,14 @@ export default function MyQuestionsPage() {
                 variant="outline"
                 onClick={() => setPage(page + 1)}
                 disabled={page === pagination.pages}
+                className="font-inter"
               >
                 Next
               </Button>
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

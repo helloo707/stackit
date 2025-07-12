@@ -174,12 +174,12 @@ export default function MyAnswersPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mx-auto"></div>
+            <p className="mt-4 text-muted-foreground font-inter">Loading...</p>
           </div>
         </div>
       </div>
@@ -191,21 +191,29 @@ export default function MyAnswersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Answers</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-foreground font-inter">My Answers</h1>
+            <p className="text-muted-foreground mt-1 font-inter">
               {pagination.total} answers • {pagination.total > 0 ? `${Math.ceil(pagination.total / pagination.limit)} pages` : 'No answers yet'}
             </p>
           </div>
           <div className="flex gap-2">
             <Link href="/questions">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue hover:bg-blue-light font-inter">
                 <Plus className="h-4 w-4 mr-2" />
                 Browse Questions
               </Button>
@@ -214,17 +222,17 @@ export default function MyAnswersPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-6 font-inter">
           {/* Search */}
           <div className="mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Search your answers by content..."
                 defaultValue={search}
                 onChange={(e) => debouncedSearch(e.target.value)}
-                className="pl-10 pr-4"
+                className="pl-10 pr-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground shadow-sm w-full font-inter"
               />
             </div>
           </div>
@@ -233,11 +241,11 @@ export default function MyAnswersPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter</label>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
               >
                 <option value="all">All Answers</option>
                 <option value="accepted">Accepted</option>
@@ -247,11 +255,11 @@ export default function MyAnswersPage() {
 
             {/* Sort */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">Sort</label>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -266,7 +274,7 @@ export default function MyAnswersPage() {
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="w-full"
+                  className="w-full font-inter"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Filters
@@ -278,22 +286,22 @@ export default function MyAnswersPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <p className="text-red-800">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 font-inter">
+            <p className="text-red-800 font-inter">{error}</p>
           </div>
         )}
 
         {/* Answers List */}
         {loading ? (
           <div className="text-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-2 text-gray-600">Loading your answers...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue font-inter" />
+            <p className="mt-2 text-muted-foreground font-inter">Loading your answers...</p>
           </div>
         ) : answers.length === 0 ? (
           <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">No answers found</h3>
-            <p className="mt-2 text-gray-600">
+            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground font-inter" />
+            <h3 className="mt-4 text-lg font-medium text-foreground font-inter">No answers found</h3>
+            <p className="mt-2 text-muted-foreground font-inter">
               {hasActiveFilters 
                 ? 'Try adjusting your search or filters'
                 : "You haven't answered any questions yet. Start helping others!"
@@ -301,7 +309,7 @@ export default function MyAnswersPage() {
             </p>
             {!hasActiveFilters && (
               <Link href="/questions" className="mt-4 inline-block">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-blue hover:bg-blue-light font-inter">
                   <Plus className="h-4 w-4 mr-2" />
                   Browse Questions to Answer
                 </Button>
@@ -313,20 +321,20 @@ export default function MyAnswersPage() {
             {answers.map((answer) => (
               <div
                 key={answer._id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="bg-card rounded-2xl shadow-md border border-border p-6 hover:border-blue hover:shadow-lg transition-all font-inter"
               >
                 <div className="flex gap-4">
                   {/* Stats */}
-                  <div className="flex flex-col items-center space-y-2 text-sm text-gray-500 min-w-[80px]">
+                  <div className="flex flex-col items-center space-y-2 text-xs text-muted-foreground min-w-[80px] font-inter">
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-blue font-inter">
                         {getVoteCount(answer.votes)}
                       </div>
                       <div>votes</div>
                     </div>
                     <div className="text-center">
                       {answer.isAccepted && (
-                        <div className="text-green-600">
+                        <div className="text-emerald font-inter">
                           <Check className="h-6 w-6 mx-auto" />
                           <div className="text-xs">Accepted</div>
                         </div>
@@ -339,25 +347,25 @@ export default function MyAnswersPage() {
                     <div className="flex items-start justify-between mb-2">
                       <Link 
                         href={`/questions/${answer.question._id}`}
-                        className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                        className="text-lg font-semibold text-foreground hover:text-blue transition-colors font-inter"
                       >
                         {answer.question.title}
                       </Link>
                       <div className="flex items-center gap-2">
                         {answer.isAccepted && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-inter">
                             Accepted
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-3 line-clamp-3">
+                    <p className="text-muted-foreground mb-3 line-clamp-3 font-inter">
                       {answer.content.replace(/<[^>]*>/g, '').substring(0, 300)}...
                     </p>
 
                     {/* Meta and Actions */}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-inter">
                       <div className="flex items-center space-x-4">
                         <span>
                           Answered {formatDate(answer.createdAt)}
@@ -371,12 +379,12 @@ export default function MyAnswersPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Link href={`/questions/${answer.question._id}#answer-${answer._id}`}>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="font-inter">
                             View
                           </Button>
                         </Link>
                         <Link href={`/answers/${answer._id}/edit`}>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="font-inter">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -385,7 +393,7 @@ export default function MyAnswersPage() {
                           size="sm"
                           onClick={() => handleDeleteAnswer(answer._id)}
                           disabled={deletingAnswer === answer._id}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 font-inter"
                         >
                           {deletingAnswer === answer._id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -410,6 +418,7 @@ export default function MyAnswersPage() {
                 variant="outline"
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
+                className="font-inter"
               >
                 Previous
               </Button>
@@ -421,6 +430,7 @@ export default function MyAnswersPage() {
                     key={pageNum}
                     variant={page === pageNum ? "default" : "outline"}
                     onClick={() => setPage(pageNum)}
+                    className="font-inter"
                   >
                     {pageNum}
                   </Button>
@@ -431,12 +441,14 @@ export default function MyAnswersPage() {
                 variant="outline"
                 onClick={() => setPage(page + 1)}
                 disabled={page === pagination.pages}
+                className="font-inter"
               >
                 Next
               </Button>
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

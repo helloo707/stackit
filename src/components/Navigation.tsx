@@ -36,6 +36,9 @@ export default function Navigation() {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [showNav, setShowNav] = useState(true);
+  const lastScrollY = useRef(0);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -71,6 +74,25 @@ export default function Navigation() {
     return () => clearInterval(intervalId);
   }, [session]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 8);
+      if (window.scrollY < 32) {
+        setShowNav(true);
+        lastScrollY.current = window.scrollY;
+        return;
+      }
+      if (window.scrollY > lastScrollY.current) {
+        setShowNav(false); // scrolling down
+      } else {
+        setShowNav(true); // scrolling up
+      }
+      lastScrollY.current = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -88,15 +110,15 @@ export default function Navigation() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-opacity-80">
+    <nav className={`bg-card border-b border-border fixed top-0 left-0 w-full z-50 backdrop-blur-sm bg-opacity-80 transition-shadow transition-transform duration-300 ${scrolled ? 'shadow-futuristic-lg' : ''} ${showNav ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">StackIt</span>
+            {/* <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-teal-foreground font-bold text-lg font-orbitron font-inter">S</span>
+            </div> */}
+            <span className="text-xl font-bold text-foreground font-orbitron font-inter">StackIt</span>
           </Link>
 
           {/* Desktop Search */}
@@ -135,15 +157,7 @@ export default function Navigation() {
                 Questions
               </Button>
             </Link>
-            <Link href="/tags">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={isActive('/tags') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
-              >
-                Tags
-              </Button>
-            </Link>
+           
             <Link href="/leaderboard">
               <Button
                 variant="ghost"
@@ -212,27 +226,27 @@ export default function Navigation() {
                     </Button>
                   </div>
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="absolute right-0 mt-2 w-48 bg-card rounded-2xl shadow-lg py-1 z-50 border border-border font-inter">
                       <Link href="/dashboard">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <User className="h-4 w-4 mr-2" />
                           Dashboard
                         </Button>
                       </Link>
                       <Link href="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start text-popover-foreground hover:bg-accent">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground hover:bg-accent">
                           <User className="h-4 w-4 mr-2" />
                           Profile
                         </Button>
                       </Link>
                       <Link href="/my-questions">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <MessageSquare className="h-4 w-4 mr-2" />
                           My Questions
                         </Button>
                       </Link>
                       <Link href="/my-answers">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <TrendingUp className="h-4 w-4 mr-2" />
                           My Answers
                         </Button>
@@ -316,15 +330,7 @@ export default function Navigation() {
                   Questions
                 </Button>
               </Link>
-              <Link href="/tags">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`w-full justify-start ${isActive('/tags') ? 'bg-blue-50 text-blue-700' : ''}`}
-                >
-                  Tags
-                </Button>
-              </Link>
+            
               <Link href="/leaderboard">
                 <Button
                   variant="ghost"

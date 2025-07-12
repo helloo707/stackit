@@ -33,6 +33,7 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/components/prism-markup';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Answer {
   _id: string;
@@ -126,6 +127,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
+  const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [replyTo, setReplyTo] = useState<{ answerId: string; parentId: string | null } | null>(null);
   const [replyInput, setReplyInput] = useState('');
   const [isFollowed, setIsFollowed] = useState(false);
@@ -698,10 +700,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Loading question...</div>
+          <div className="text-center text-muted-foreground font-inter">Loading question...</div>
         </div>
       </div>
     );
@@ -709,10 +711,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   if (!questionData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Question not found</div>
+          <div className="text-center text-muted-foreground font-inter">Question not found</div>
         </div>
       </div>
     );
@@ -727,20 +729,28 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
       <Navigation />
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+            <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{question.title}</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-4 font-inter">{question.title}</h1>
           
           {/* Meta */}
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-6 font-inter">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -753,6 +763,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
               <div className="flex items-center gap-1">
                 <Eye className="h-4 w-4" />
                 <span>{question.views} views</span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -789,58 +800,57 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                 <Bell className={`h-4 w-4 ${isFollowed ? 'text-blue-600' : ''}`} />
                 {isFollowed ? 'Following' : 'Follow'}
               </Button>
-            </div>
           </div>
         </div>
 
         {/* Question */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          {/* Bounty status display */}
-          {question.bounty && (
-            <div className="mb-4 flex items-center gap-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                💰 Bounty: {question.bounty.amount} {question.bounty.status === 'awarded' && question.bounty.awardedTo ? '(Awarded)' : question.bounty.status === 'open' ? '(Open)' : '(Cancelled)'}
-              </span>
-              {question.bounty.status === 'awarded' && question.bounty.awardedTo && (
-                <span className="text-xs text-gray-600">Awarded to user ID: {question.bounty.awardedTo}</span>
-              )}
-            </div>
-          )}
-          {/* Bounty offer/increase form for author */}
-          {isQuestionAuthor() && (!question.bounty || question.bounty.status === 'open') && (
-            <div className="mb-4 flex items-center gap-2">
-              <input
-                type="number"
-                min="1"
-                className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
-                placeholder="Bounty amount"
-                value={bountyAmount}
-                onChange={e => setBountyAmount(e.target.value)}
-                disabled={bountyLoading}
-              />
-              <Button
-                size="sm"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                onClick={offerOrIncreaseBounty}
-                disabled={bountyLoading}
-              >
-                {question.bounty && question.bounty.amount > 0 ? 'Increase Bounty' : 'Offer Bounty'}
-              </Button>
-            </div>
-          )}
+          <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-8 font-inter">
+            {/* Bounty status display */}
+            {question.bounty && (
+              <div className="mb-4 flex items-center gap-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  💰 Bounty: {question.bounty.amount} {question.bounty.status === 'awarded' && question.bounty.awardedTo ? '(Awarded)' : question.bounty.status === 'open' ? '(Open)' : '(Cancelled)'}
+                </span>
+                {question.bounty.status === 'awarded' && question.bounty.awardedTo && (
+                  <span className="text-xs text-gray-600">Awarded to user ID: {question.bounty.awardedTo}</span>
+                )}
+              </div>
+            )}
+            {/* Bounty offer/increase form for author */}
+            {isQuestionAuthor() && (!question.bounty || question.bounty.status === 'open') && (
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
+                  placeholder="Bounty amount"
+                  value={bountyAmount}
+                  onChange={e => setBountyAmount(e.target.value)}
+                  disabled={bountyLoading}
+                />
+                <Button
+                  size="sm"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                  onClick={offerOrIncreaseBounty}
+                  disabled={bountyLoading}
+                >
+                  {question.bounty && question.bounty.amount > 0 ? 'Increase Bounty' : 'Offer Bounty'}
+                </Button>
+              </div>
+            )}
           <div className="flex gap-4">
             {/* Vote buttons */}
             <div className="flex flex-col items-center">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue-600' : ''}`}
+                  className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue' : ''}`}
                 onClick={() => handleVote('question', question._id, 'upvote')}
                 disabled={voting === question._id}
               >
                 <ThumbsUp className="h-5 w-5" />
               </Button>
-              <div className="text-lg font-semibold text-gray-900 my-2">
+                <div className="text-lg font-semibold text-blue my-2 font-inter">
                 {getVoteCount(question.votes)}
               </div>
               <Button 
@@ -857,7 +867,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
             {/* Question content */}
             <div className="flex-1">
               <div 
-                className="prose max-w-none"
+                  className="prose max-w-none text-foreground font-inter"
                 dangerouslySetInnerHTML={{ __html: question.content }}
               />
               
@@ -865,7 +875,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
               <div className="flex flex-wrap gap-2 mt-6">
                 {question.tags.map((tag) => (
                   <Link key={tag} href={`/tags/${tag}`}>
-                    <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 cursor-pointer flex items-center gap-1">
+                      <span className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full hover:bg-blue/20 cursor-pointer flex items-center gap-1 font-inter">
                       <Tag className="h-3 w-3" />
                       {tag}
                     </span>
@@ -876,83 +886,148 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
           </div>
         </div>
 
+          {/* Toggle Button Group */}
+          <div className="flex justify-end mb-6">
+            <ToggleGroup type="single" value={showAnswerForm ? 'answer' : 'answers'} onValueChange={val => setShowAnswerForm(val === 'answer')}>
+              <ToggleGroupItem value="answers" aria-label="View Answers" className="font-inter">View Answers</ToggleGroupItem>
+              <ToggleGroupItem value="answer" aria-label="Your Answer" className="font-inter">Your Answer</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Conditionally render answer form or answers list */}
+          {showAnswerForm ? (
+            session ? (
+              isQuestionAuthor() ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-8">
+                  <p className="text-yellow-800">You cannot answer your own question.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
+                  <form onSubmit={handleSubmitAnswer}>
+                    <RichTextEditor
+                      content={answerContent}
+                      onChange={setAnswerContent}
+                      placeholder="Write your answer here..."
+                    />
+                    <div className="flex justify-end mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submittingAnswer || !answerContent.trim()}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {submittingAnswer ? 'Posting...' : 'Post Answer'}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )
+            ) : (
+              <div className="bg-blue/10 border border-blue rounded-2xl p-6 text-center font-inter mb-8">
+                <p className="text-blue mb-4 font-inter">Please sign in to answer this question</p>
+                <Link href="/auth/signin">
+                  <Button className="bg-blue hover:bg-blue-light font-inter">
+                    Sign In to Answer
+                  </Button>
+                </Link>
+              </div>
+            )
+          ) : (
+            <>
         {/* Answers */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {uniqueAnswers.length} Answer{uniqueAnswers.length !== 1 ? 's' : ''}
+                  <h2 className="text-2xl font-bold text-foreground font-inter">
+                    {uniqueAnswers.length} Answer{uniqueAnswers.length !== 1 ? 's' : ''}
             </h2>
           </div>
 
-          {uniqueAnswers.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No answers yet. Be the first to answer this question!</p>
+                {uniqueAnswers.length === 0 ? (
+                  <div className="bg-card rounded-2xl shadow-md border border-border p-8 text-center font-inter">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4 font-inter">No answers yet. Be the first to answer this question!</p>
             </div>
           ) : (
             <div className="space-y-6">
-              {uniqueAnswers.map((answer) => (
-                <div key={answer._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <div className="flex gap-4">
-                    {/* Vote buttons */}
-                    <div className="flex flex-col items-center">
+                    {uniqueAnswers.map((answer) => (
+                      <div
+                        key={answer._id}
+                        className={`relative bg-card rounded-2xl shadow-md border p-6 font-inter transition-all ${answer.isAccepted ? 'border-emerald shadow-lg ring-2 ring-emerald/30' : 'border-border'}`}
+                      >
+                        {/* Top Row: Author, Date, Accepted Badge, Vote Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                          <div className="flex items-center gap-3">
+                            {answer.author.image ? (
+                              <img src={answer.author.image} alt={answer.author.name} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <User className="w-8 h-8 text-muted-foreground bg-muted rounded-full p-1" />
+                            )}
+                            <span className="font-semibold text-foreground font-inter">{answer.author.name}</span>
+                            <span className="text-xs text-muted-foreground font-inter">{new Date(answer.createdAt).toLocaleDateString()}</span>
+                            {answer.isAccepted && (
+                              <span className="inline-flex items-center gap-1 bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-semibold ml-2">
+                                <Check className="h-4 w-4" /> Accepted
+                              </span>
+                            )}
+                          </div>
+                          {/* Vote Buttons */}
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue-600' : ''}`}
+                              className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue' : ''}`}
                         onClick={() => handleVote('answer', answer._id, 'upvote')}
                         disabled={voting === answer._id}
+                              aria-label="Upvote"
                       >
                         <ThumbsUp className="h-5 w-5" />
                       </Button>
-                      <div className="text-lg font-semibold text-gray-900 my-2">
-                        {getVoteCount(answer.votes)}
-                      </div>
+                            <span className="font-bold text-lg text-blue font-inter min-w-[2rem] text-center">{getVoteCount(answer.votes)}</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className={`p-1 ${hasUserVoted(answer.votes, 'downvote') ? 'text-red-600' : ''}`}
                         onClick={() => handleVote('answer', answer._id, 'downvote')}
                         disabled={voting === answer._id}
+                              aria-label="Downvote"
                       >
                         <ThumbsDown className="h-5 w-5" />
                       </Button>
-                      {answer.isAccepted && (
-                        <div className="mt-2">
-                          <Check className="h-6 w-6 text-green-600" />
                         </div>
-                      )}
                     </div>
 
-                    {/* Answer content */}
-                    <div className="flex-1">
+                        {/* Answer Content */}
+                        <div className="prose max-w-none text-foreground font-inter mb-4">
+                          <div dangerouslySetInnerHTML={{ __html: answer.content }} />
+                        </div>
+
+                        {/* ELI5 Section */}
                       <div className="prose max-w-none mb-4">
                         {eli5Mode[answer._id] && answer.eli5Content ? (
                           <div>
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                              <h4 className="text-blue-800 font-medium mb-2">🧩 Simplifying the answer for everyone</h4>
+                              <div className="bg-blue/10 border-l-4 border-blue p-4 mb-4 rounded-xl">
+                                <h4 className="text-blue font-medium mb-2 font-inter">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
                               <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => toggleELI5(answer._id)}
-                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                className="text-blue border-blue hover:bg-blue/10 font-inter"
                             >
-                              Show Original Answer
+                                🧩 Show Simplified Answer
                             </Button>
                           </div>
                         ) : (
                           <div>
-                            <div dangerouslySetInnerHTML={{ __html: answer.content }} />
                             {answer.eli5Content && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => toggleELI5(answer._id)}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                                  className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
                               >
-                                🧩 Show Simplified Answer
+                                🤔 Show ELI5 Version
                               </Button>
                             )}
                             {!answer.eli5Content && (
@@ -961,160 +1036,112 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                 size="sm"
                                 onClick={() => handleGenerateELI5(answer._id)}
                                 disabled={generatingEli5 === answer._id}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                                  className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
                               >
-                                {generatingEli5 === answer._id ? 'Generating...' : '🧩 Generate Simplified Answer'}
+                                {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
                               </Button>
                             )}
                           </div>
                         )}
                       </div>
                       
-                      {/* Meta */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            <span>{answer.author.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{new Date(answer.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FlagButton 
-                            contentType="answer" 
-                            contentId={answer._id} 
-                            className="text-gray-500 hover:text-red-600"
-                          />
-                          {!answer.isAccepted && isQuestionAuthor() && (
-                            <Button 
-                              variant="outline" 
+                        {/* Actions Row */}
+                        <div className="flex items-center justify-between border-t border-border pt-4 mt-4 gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <FlagButton
+                              contentType="answer"
+                              contentId={answer._id}
+                              className="text-gray-500 hover:text-red-600"
+                            />
+                        {!answer.isAccepted && isQuestionAuthor() && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleAcceptAnswer(answer._id)}
+                            disabled={acceptingAnswer === answer._id}
+                                className="ml-2"
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Accept Answer
+                          </Button>
+                        )}
+                      </div>
+                          {/* Award bounty button for author if bounty is open */}
+                          {isQuestionAuthor() && question.bounty && question.bounty.status === 'open' && (
+                            <Button
+                              variant="outline"
                               size="sm"
-                              onClick={() => handleAcceptAnswer(answer._id)}
-                              disabled={acceptingAnswer === answer._id}
+                              onClick={() => awardBounty(answer._id)}
+                              disabled={awardLoading === answer._id}
                             >
-                              <Check className="h-4 w-4 mr-2" />
-                              Accept Answer
+                              💰 Award Bounty
                             </Button>
                           )}
-                        </div>
-                      </div>
-                      {/* Bounty awarded indicator */}
-                      {question.bounty && question.bounty.status === 'awarded' && question.bounty.awardedTo === answer.author.email && (
-                        <div className="mt-2 text-yellow-700 font-semibold">Bounty Awarded 🏆</div>
-                      )}
                     </div>
-                  </div>
 
-                  {/* Comments Section */}
-                  <div className="mt-6">
-                    <div className="font-semibold text-gray-700 mb-2">Comments</div>
-                    <div className="space-y-2 mb-2">
-                      {renderComments(buildCommentTree(commentsByAnswer[answer._id] || []), answer._id)}
-                    </div>
-                    {session ? (
-                      <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e, null)}>
-                        <input
-                          ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
-                          type="text"
-                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                          placeholder="Add a comment... (use @username to mention)"
-                          value={commentInputs[answer._id] || ''}
-                          onChange={e => handleCommentInputChange(answer._id, e.target.value, e)}
-                          disabled={submittingComment === answer._id}
-                        />
-                        {/* Mention dropdown */}
-                        {mentionDropdown.show && mentionDropdown.answerId === answer._id && (
-                          <div
-                            className="absolute z-50 bg-white border border-gray-200 rounded shadow-md mt-1"
-                            style={{ top: mentionDropdown.position.top, left: mentionDropdown.position.left }}
-                          >
-                            {allUsers
-                              .filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase()))
-                              .slice(0, 5)
-                              .map(u => (
-                                <div
-                                  key={u.email}
-                                  className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
-                                  onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
-                                >
-                                  {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
-                                  <span>{u.name}</span>
-                                </div>
-                              ))}
-                            {allUsers.filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase())).length === 0 && (
-                              <div className="px-3 py-2 text-gray-400">No users found</div>
-                            )}
-                          </div>
+                        {/* Bounty awarded indicator */}
+                        {question.bounty && question.bounty.status === 'awarded' && question.bounty.awardedTo === answer.author.email && (
+                          <div className="mt-2 text-yellow-700 font-semibold">Bounty Awarded 🏆</div>
                         )}
-                        <Button
-                          type="submit"
-                          size="sm"
-                          disabled={submittingComment === answer._id || !(commentInputs[answer._id] || '').trim()}
-                        >
-                          {submittingComment === answer._id ? 'Posting...' : 'Post'}
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="text-xs text-gray-500">Sign in to comment</div>
-                    )}
+
+                        {/* Comments Section */}
+                        <div className="mt-6">
+                          <div className="font-semibold text-gray-700 mb-2">Comments</div>
+                          <div className="space-y-2 mb-2">
+                            {renderComments(buildCommentTree(commentsByAnswer[answer._id] || []), answer._id)}
                   </div>
-                  {/* Award bounty button for author if bounty is open */}
-                  {isQuestionAuthor() && question.bounty && question.bounty.status === 'open' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => awardBounty(answer._id)}
-                      disabled={awardLoading === answer._id}
-                    >
-                      💰 Award Bounty
-                    </Button>
-                  )}
+                          {session ? (
+                            <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e, null)}>
+                              <input
+                                ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
+                                type="text"
+                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                placeholder="Add a comment... (use @username to mention)"
+                                value={commentInputs[answer._id] || ''}
+                                onChange={e => handleCommentInputChange(answer._id, e.target.value, e)}
+                                disabled={submittingComment === answer._id}
+                              />
+                              {/* Mention dropdown */}
+                              {mentionDropdown.show && mentionDropdown.answerId === answer._id && (
+                                <div
+                                  className="absolute z-50 bg-white border border-gray-200 rounded shadow-md mt-1"
+                                  style={{ top: mentionDropdown.position.top, left: mentionDropdown.position.left }}
+                                >
+                                  {allUsers
+                                    .filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase()))
+                                    .slice(0, 5)
+                                    .map(u => (
+                                      <div
+                                        key={u.email}
+                                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
+                                        onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
+                                      >
+                                        {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
+                                        <span>{u.name}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        {/* Answer Form */}
-        {session ? (
-          isQuestionAuthor() ? (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-              <p className="text-yellow-800">You cannot answer your own question.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
-              <form onSubmit={handleSubmitAnswer}>
-                <RichTextEditor
-                  content={answerContent}
-                  onChange={setAnswerContent}
-                  placeholder="Write your answer here..."
-                />
-                <div className="flex justify-end mt-4">
-                  <Button
-                    type="submit"
-                    disabled={submittingAnswer || !answerContent.trim()}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {submittingAnswer ? 'Posting...' : 'Post Answer'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )
-        ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-            <p className="text-blue-800 mb-4">Please sign in to answer this question</p>
-            <Link href="/auth/signin">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Sign In to Answer
-              </Button>
-            </Link>
+                <Button
+                  type="submit"
+                                size="sm"
+                                disabled={submittingComment === answer._id || !(commentInputs[answer._id] || '').trim()}
+                >
+                                {submittingComment === answer._id ? 'Posting...' : 'Post'}
+                </Button>
+            </form>
+                          ) : (
+                            <div className="text-xs text-muted-foreground">Sign in to comment</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
           </div>
         )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

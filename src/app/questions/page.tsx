@@ -248,195 +248,193 @@ export default function QuestionsPage() {
   const hasActiveFilters = search || filter !== 'all' || sort !== 'newest' || selectedTags.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Questions</h1>
-            <p className="text-gray-600 mt-1">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground  font-inter">Questions</h1>
+            <p className="text-muted-foreground mt-1 font-inter">
               {pagination.total} questions • {pagination.total > 0 ? `${Math.ceil(pagination.total / pagination.limit)} pages` : 'No questions yet'}
             </p>
-          </div>
-          <div className="flex gap-2">
-            {session && (
-              <Link href="/bookmarks">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <BookmarkCheck className="h-4 w-4" />
-                  My Bookmarks
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-md">
+              {session && (
+                <Link href="/bookmarks" className="w-full sm:w-auto">
+                  <Button variant="outline" className="flex items-center gap-2 w-full">
+                    <BookmarkCheck className="h-4 w-4" />
+                    My Bookmarks
+                  </Button>
+                </Link>
+              )}
+              <Link href="/questions/ask" className="w-full sm:w-auto">
+                <Button className="bg-blue hover:bg-blue-light w-full">
+                  Ask Question
                 </Button>
               </Link>
-            )}
-            <Link href="/questions/ask">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Ask Question
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          {/* Search */}
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Search questions by title, content, or tags..."
-                defaultValue={search}
-                onChange={(e) => debouncedSearch(e.target.value)}
-                className="pl-10 pr-4"
-              />
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Questions</option>
-                <option value="unanswered">Unanswered</option>
-                <option value="answered">Answered</option>
-                <option value="no-answers">No Answers</option>
-              </select>
+          {/* Search and Filters */}
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6 shadow-md w-full max-w-full">
+            {/* Search */}
+            <div className="mb-4">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search questions by title, content, or tags..."
+                  defaultValue={search}
+                  onChange={(e) => debouncedSearch(e.target.value)}
+                  className="pl-10 pr-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground shadow-sm w-full"
+                />
+              </div>
             </div>
 
-            {/* Sort */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="newest">Newest</option>
-                <option value="votes">Most Voted</option>
-                <option value="views">Most Viewed</option>
-                <option value="recent">Recently Active</option>
-              </select>
+            {/* Controls Row */}
+            <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-4 w-full">
+              {/* Filter */}
+              <div className="w-full md:w-1/4">
+                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter</label>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
+                >
+                  <option value="all">All Questions</option>
+                  <option value="unanswered">Unanswered</option>
+                  <option value="answered">Answered</option>
+                  <option value="no-answers">No Answers</option>
+                </select>
+              </div>
+
+              {/* Sort */}
+              <div className="w-full md:w-1/4">
+                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Sort</label>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="votes">Most Voted</option>
+                  <option value="views">Most Viewed</option>
+                  <option value="recent">Recently Active</option>
+                </select>
+              </div>
+
+              {/* Tags (on desktop, take up remaining space) */}
+              <div className="w-full md:flex-1">
+                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter by Tags</label>
+                <div className="w-full overflow-x-auto">
+                  <div className="flex flex-nowrap gap-2 min-w-max py-1">
+                    {availableTags.slice(0, 10).map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => handleTagToggle(tag)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors font-inter border border-border shadow-sm ${
+                          selectedTags.includes(tag)
+                            ? 'bg-blue text-white'
+                            : 'bg-muted text-foreground hover:bg-muted-foreground/10'
+                        }`}
+                      >
+                        <Tag className="h-3 w-3 inline mr-1" />
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Clear Filters */}
-            <div className="flex items-end">
-              {hasActiveFilters && (
+            {/* Clear Filters (always at the bottom, full width on mobile, right on desktop) */}
+            {hasActiveFilters && (
+              <div className="flex justify-end mt-2">
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="w-full"
+                  className="w-full md:w-auto"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Filters
                 </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Tags */}
-          {availableTags.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.slice(0, 10).map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      selectedTags.includes(tag)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Tag className="h-3 w-3 inline mr-1" />
-                    {tag}
-                  </button>
-                ))}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <p className="text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* Questions List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-2 text-gray-600">Loading questions...</p>
-          </div>
-        ) : questions.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">No questions found</h3>
-            <p className="mt-2 text-gray-600">
-              {hasActiveFilters 
-                ? 'Try adjusting your search or filters'
-                : 'Be the first to ask a question!'
-              }
-            </p>
-            {!hasActiveFilters && (
-              <Link href="/questions/ask" className="mt-4 inline-block">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Ask Question
-                </Button>
-              </Link>
             )}
           </div>
-        ) : (
-          <div className="space-y-4">
-            {questions.map((question) => (
-              <div
-                key={question._id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex gap-4">
-                  {/* Stats */}
-                  <div className="flex flex-col items-center space-y-2 text-sm text-gray-500 min-w-[80px]">
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {getVoteCount(question.votes)}
-                      </div>
-                      <div>votes</div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+              <p className="text-red-800 font-inter">{error}</p>
+            </div>
+          )}
+
+          {/* Questions List */}
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue" />
+              <p className="mt-2 text-muted-foreground font-inter">Loading questions...</p>
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium text-foreground font-inter">No questions found</h3>
+              <p className="mt-2 text-muted-foreground font-inter">
+                {hasActiveFilters 
+                  ? 'Try adjusting your search or filters'
+                  : 'Be the first to ask a question!'
+                }
+              </p>
+              {!hasActiveFilters && (
+                <Link href="/questions/ask" className="mt-4 inline-block">
+                  <Button className="bg-blue hover:bg-blue-light">
+                    Ask Question
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {questions.map((question) => (
+                <div
+                  key={question._id}
+                  className="card-modern flex gap-0 md:gap-6 items-stretch hover:border-blue hover:shadow-lg transition-all p-0 md:p-0"
+                >
+                  {/* Stats Column */}
+                  <div className="flex flex-col justify-center items-center min-w-[90px] bg-muted/70 rounded-l-2xl py-6 px-2 md:px-4 text-center border-r border-border">
+                    <div className="mb-4">
+                      <div className="font-bold text-lg text-blue font-inter">{getVoteCount(question.votes)}</div>
+                      <div className="text-xs text-muted-foreground font-inter">votes</div>
                     </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {getAnswerCount(question)}
-                      </div>
-                      <div>answers</div>
+                    <div className="mb-4">
+                      <div className="font-bold text-lg text-emerald font-inter">{getAnswerCount(question)}</div>
+                      <div className="text-xs text-muted-foreground font-inter">answers</div>
                     </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-gray-900">
-                        {question.views}
-                      </div>
-                      <div>views</div>
+                    <div>
+                      <div className="font-bold text-lg text-orange font-inter">{question.views}</div>
+                      <div className="text-xs text-muted-foreground font-inter">views</div>
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1">
+                  {/* Content Column */}
+                  <div className="flex-1 flex flex-col justify-between p-6">
                     <div className="flex items-start justify-between mb-2">
                       <Link 
                         href={`/questions/${question._id}`}
-                        className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                        className="text-lg font-semibold text-foreground hover:text-blue transition-colors font-inter"
                       >
                         {question.title}
                       </Link>
                       <div className="flex items-center gap-2">
                         {getAnswerCount(question) > 0 && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-inter">
                             Answered
                           </span>
                         )}
@@ -447,11 +445,43 @@ export default function QuestionsPage() {
                           className="p-1"
                         >
                           {bookmarkedQuestions.has(question._id) ? (
-                            <BookmarkCheck className="h-5 w-5 text-blue-600" />
+                            <BookmarkCheck className="h-5 w-5 text-blue" />
                           ) : (
-                            <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                            <Bookmark className="h-5 w-5 text-muted-foreground hover:text-blue" />
                           )}
                         </Button>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mb-3 line-clamp-2 font-inter">
+                      {question.content.replace(/<[^>]*>/g, '').substring(0, 200)}...
+                    </p>
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {question.tags.map((tag) => (
+                        <Link key={tag} href={`/tags/${tag}`}>
+                          <span className="bg-blue/10 text-blue text-xs px-2 py-1 rounded hover:bg-blue/20 cursor-pointer font-inter">
+                            {tag}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                    
+                    {/* Question Meta */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground font-inter">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4" />
+                          <span>{question.views}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{question.answers.length}</span>
+                        </div>
+                        <span>•</span>
+                        <span>{formatDate(question.createdAt)}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
                         <FlagButton 
                           contentType="question" 
                           contentId={question._id} 
@@ -459,81 +489,48 @@ export default function QuestionsPage() {
                         />
                       </div>
                     </div>
-                    
-                    <p className="text-gray-600 mb-3 line-clamp-2">
-                      {question.content.replace(/<[^>]*>/g, '').substring(0, 200)}...
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {question.tags.map((tag) => (
-                        <Link key={tag} href={`/tags/${tag}`}>
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200 cursor-pointer">
-                            {tag}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-
-                    {/* Meta */}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center space-x-4">
-                        <span>
-                          Asked {formatDate(question.createdAt)}
-                        </span>
-                        <span>
-                          by {question.isAnonymous ? 'Anonymous' : question.author.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Eye className="h-4 w-4" />
-                        <span>{question.views}</span>
-                        <MessageSquare className="h-4 w-4" />
-                        <span>{question.answers.length}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pagination.pages > 1 && (
-          <div className="flex justify-center mt-8">
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              
-              {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-              
-              <Button
-                variant="outline"
-                onClick={() => setPage(page + 1)}
-                disabled={page === pagination.pages}
-              >
-                Next
-              </Button>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="flex justify-center mt-8">
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={page === pageNum ? "default" : "outline"}
+                      onClick={() => setPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === pagination.pages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
