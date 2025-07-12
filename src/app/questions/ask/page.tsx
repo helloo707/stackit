@@ -10,6 +10,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { ArrowLeft, Tag, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default function AskQuestionPage() {
   const { data: session, status } = useSession();
@@ -93,27 +94,28 @@ export default function AskQuestionPage() {
 
   const validateForm = () => {
     let isValid = true;
-    
     // Title validation
-    // if (!title.trim()) {
-    //   setTitleError('Title is required');
-    //   isValid = false;
-    // } else if (title.trim().length < 5) {
-    //   setTitleError('Title must be at least 10 characters long');
-    //   isValid = false;
-    // } else if (title.trim().length > 5) {
-    //   setTitleError('Title must be less than 300 characters');
-    //   isValid = false;
-    // } else {
-    //   setTitleError('');
-    // }
+    const titleWords = title.trim().split(/\s+/).filter(Boolean);
+    if (!title.trim()) {
+      setTitleError('Title is required');
+      isValid = false;
+    } else if (titleWords.length < 3) {
+      setTitleError('Title must be at least 3 words');
+      isValid = false;
+    } else if (title.trim().length > 300) {
+      setTitleError('Title must be less than 300 characters');
+      isValid = false;
+    } else {
+      setTitleError('');
+    }
 
     // Content validation
+    const contentWords = content.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(Boolean);
     if (!content.trim()) {
       setContentError('Question content is required');
       isValid = false;
-    } else if (content.trim().length < 20) {
-      setContentError('Question content must be at least 20 characters long');
+    } else if (contentWords.length < 10) {
+      setContentError('Question content must be at least 10 words');
       isValid = false;
     } else {
       setContentError('');
@@ -200,6 +202,11 @@ export default function AskQuestionPage() {
           content,
           tags,
           isAnonymous,
+          author: {
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image,
+          },
         }),
       });
 
@@ -295,7 +302,6 @@ export default function AskQuestionPage() {
               maxLength={300}
             />
             <div className="flex justify-between items-center mt-1">
-                  <p className={`text-sm ${titleCount.color}`}>{titleCount.count}/300 characters</p>
               {titleError && (
                 <p className="text-sm text-red-500 flex items-center">
                   <AlertCircle className="h-4 w-4 mr-1" />

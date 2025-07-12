@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import "@/models/Question";
+import "@/models/Answer";
+import "@/models/User";
 
 interface Notification {
   _id: string;

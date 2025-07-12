@@ -52,6 +52,24 @@ interface QuestionsResponse {
   };
 }
 
+interface Answer {
+  _id: string;
+  content: string;
+  eli5Content?: string;
+  author: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  votes: {
+    upvotes: string[];
+    downvotes: string[];
+  };
+  isAccepted: boolean;
+  createdAt: string;
+  isAI?: boolean; // <-- Add this line
+}
+
 // Helper functions
 function getVoteCount(votes: { upvotes: string[]; downvotes: string[] }) {
   return (votes?.upvotes?.length || 0) - (votes?.downvotes?.length || 0);
@@ -80,6 +98,11 @@ export default function QuestionsPage() {
     pages: 0,
   });
 
+  // Add new filter states
+  const [time, setTime] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [popularity, setPopularity] = useState('default');
+
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -101,6 +124,9 @@ export default function QuestionsPage() {
         limit: '10',
         sort,
         filter,
+        time,
+        status,
+        popularity,
         ...(search && { search }),
         ...(selectedTags.length > 0 && { tags: selectedTags.join(',') }),
       });
@@ -204,7 +230,7 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     fetchQuestions();
-  }, [page, filter, sort, search, selectedTags]);
+  }, [page, filter, sort, search, selectedTags, time, status, popularity]);
 
   useEffect(() => {
     // Check bookmark status for all questions when they load
@@ -282,82 +308,82 @@ export default function QuestionsPage() {
               </Link>
             </div>
           </div>
-
-          {/* Search and Filters */}
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6 shadow-md w-full max-w-full">
-            {/* Search */}
-            <div className="mb-4">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search questions by title, content, or tags..."
-                  defaultValue={search}
-                  onChange={(e) => debouncedSearch(e.target.value)}
-                  className="pl-10 pr-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground shadow-sm w-full"
-                />
-              </div>
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            {/* Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Questions</option>
+                <option value="unanswered">Unanswered</option>
+                <option value="answered">Answered</option>
+                <option value="no-answers">No Answers</option>
+              </select>
             </div>
-
-            {/* Controls Row */}
-            <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-4 w-full">
-              {/* Filter */}
-              <div className="w-full md:w-1/4">
-                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter</label>
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
-                >
-                  <option value="all">All Questions</option>
-                  <option value="unanswered">Unanswered</option>
-                  <option value="answered">Answered</option>
-                  <option value="no-answers">No Answers</option>
-                </select>
-              </div>
-
-              {/* Sort */}
-              <div className="w-full md:w-1/4">
-                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Sort</label>
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue text-foreground font-inter shadow-sm"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="votes">Most Voted</option>
-                  <option value="views">Most Viewed</option>
-                  <option value="recent">Recently Active</option>
-                </select>
-              </div>
-
-              {/* Tags (on desktop, take up remaining space) */}
-              <div className="w-full md:flex-1">
-                <label className="block text-sm font-medium text-foreground mb-2 font-inter">Filter by Tags</label>
-                <div className="w-full overflow-x-auto">
-                  <div className="flex flex-nowrap gap-2 min-w-max py-1">
-                    {availableTags.slice(0, 10).map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => handleTagToggle(tag)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors font-inter border border-border shadow-sm ${
-                          selectedTags.includes(tag)
-                            ? 'bg-blue text-white'
-                            : 'bg-muted text-foreground hover:bg-muted-foreground/10'
-                        }`}
-                      >
-                        <Tag className="h-3 w-3 inline mr-1" />
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {/* Time Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+              <select
+                value={time}
+                onChange={e => setTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Any Time</option>
+                <option value="24h">Last 24 hours</option>
+                <option value="week">Last week</option>
+                <option value="month">Last month</option>
+              </select>
             </div>
-
-            {/* Clear Filters (always at the bottom, full width on mobile, right on desktop) */}
-            {hasActiveFilters && (
-              <div className="flex justify-end mt-2">
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Any Status</option>
+                <option value="accepted">Has Accepted Answer</option>
+                <option value="no-accepted">No Accepted Answer</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            {/* Popularity Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Popularity</label>
+              <select
+                value={popularity}
+                onChange={e => setPopularity(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="default">Default</option>
+                <option value="most-upvoted">Most Upvoted</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="most-answered">Most Answered</option>
+                <option value="hot">Hot/Trending</option>
+              </select>
+            </div>
+            {/* Sort (existing) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="newest">Newest</option>
+                <option value="votes">Most Voted</option>
+                <option value="views">Most Viewed</option>
+                <option value="recent">Recently Active</option>
+              </select>
+            </div>
+            {/* Clear Filters */}
+            <div className="flex items-end">
+              {hasActiveFilters && (
                 <Button
                   variant="outline"
                   onClick={clearFilters}
