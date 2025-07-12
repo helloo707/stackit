@@ -199,192 +199,30 @@ export default function AskQuestionPage() {
   const titleCount = getCharacterCount(title);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Ask a Question</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground font-inter">Ask a Question</h1>
+          <p className="text-muted-foreground mt-2 font-inter">
             Share your knowledge and help others in the community
           </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Title *
-            </label>
-            <Input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (titleError) setTitleError('');
-              }}
-              placeholder="What&apos;s your question? Be specific."
-              className={`text-lg ${titleError ? 'border-red-500' : ''}`}
-              maxLength={300}
-            />
-            <div className="flex justify-between items-center mt-1">
-              <p className={`text-sm ${titleCount.color}`}>
-                {titleCount.count}/300 characters
-              </p>
-              {titleError && (
-                <p className="text-sm text-red-500 flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  {titleError}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Details *
-            </label>
-            <RichTextEditor
-              content={content}
-              onChange={(newContent) => {
-                setContent(newContent);
-                if (contentError) setContentError('');
-              }}
-              placeholder="Provide all the information someone would need to answer your question..."
-            />
-            {contentError && (
-              <p className="text-sm text-red-500 mt-2 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {contentError}
-              </p>
-            )}
-          </div>
-
-          {/* Tags */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags * (up to 5)
-            </label>
-            <div className="flex gap-2 mb-3">
-              <Input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Add a tag..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                className={tagsError ? 'border-red-500' : ''}
-              />
-              <Button
-                type="button"
-                onClick={handleAddTag}
-                disabled={!tagInput.trim() || tags.length >= 5}
-                variant="outline"
-              >
-                <Tag className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Suggested Tags */}
-            {suggestedTags.length > 0 && (
-              <div className="mb-3">
-                <p className="text-sm text-gray-600 mb-2">Suggested tags:</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedTags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleSuggestedTagClick(tag)}
-                      disabled={tags.includes(tag) || tags.length >= 5}
-                      className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <p className="text-sm text-gray-500">
-              Tags help categorize your question and make it easier to find
-            </p>
-            {tagsError && (
-              <p className="text-sm text-red-500 mt-2 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {tagsError}
-              </p>
-            )}
-          </div>
-
-          {/* Anonymous Option */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Post Anonymously
-                </label>
-                <p className="text-sm text-gray-500">
-                  Your question will be posted without showing your name
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAnonymous(!isAnonymous)}
-                className={isAnonymous ? 'bg-blue-50 border-blue-200' : ''}
-              >
-                {isAnonymous ? (
-                  <>
-                    <EyeOff className="h-4 w-4 mr-2" />
-                    Anonymous
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Public
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <div className="flex justify-end gap-4">
-            <Link href="/questions">
-              <Button type="button" variant="outline">
+          <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-md">
+            <Link href="/questions" className="w-full sm:w-auto">
+              <Button type="button" variant="outline" className="w-full">
                 Cancel
               </Button>
             </Link>
             <Button
               type="submit"
               disabled={isSubmitting || !title.trim() || !content.trim() || tags.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue hover:bg-blue-light w-full"
+              form="ask-question-form"
             >
               {isSubmitting ? (
                 <>
@@ -396,15 +234,173 @@ export default function AskQuestionPage() {
               )}
             </Button>
           </div>
+        </div>
+
+        {/* Form Card */}
+        <form id="ask-question-form" onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-card rounded-2xl shadow-md border border-border p-6 space-y-6 font-inter">
+            {/* Title */}
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2 font-inter">
+                Title *
+              </label>
+              <Input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (titleError) setTitleError('');
+                }}
+                placeholder="What's your question? Be specific."
+                className={`text-lg ${titleError ? 'border-red-500' : ''}`}
+                maxLength={300}
+              />
+              <div className="flex justify-between items-center mt-1">
+                <p className={`text-sm ${titleCount.color}`}>{titleCount.count}/300 characters</p>
+                {titleError && (
+                  <p className="text-sm text-red-500 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {titleError}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">
+                Details *
+              </label>
+              <RichTextEditor
+                content={content}
+                onChange={(newContent) => {
+                  setContent(newContent);
+                  if (contentError) setContentError('');
+                }}
+                placeholder="Provide all the information someone would need to answer your question..."
+              />
+              {contentError && (
+                <p className="text-sm text-red-500 mt-2 flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  {contentError}
+                </p>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 font-inter">
+                Tags * (up to 5)
+              </label>
+              <div className="flex gap-2 mb-3">
+                <Input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add a tag..."
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  className={tagsError ? 'border-red-500' : ''}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddTag}
+                  disabled={!tagInput.trim() || tags.length >= 5}
+                  variant="outline"
+                >
+                  <Tag className="h-4 w-4" />
+                </Button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full flex items-center gap-1 font-inter"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-blue hover:text-blue-dark"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Suggested Tags */}
+              {suggestedTags.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleSuggestedTagClick(tag)}
+                        disabled={tags.includes(tag) || tags.length >= 5}
+                        className="bg-muted text-foreground text-sm px-3 py-1 rounded-full hover:bg-muted-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed font-inter"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Tags help categorize your question and make it easier to find
+              </p>
+              {tagsError && (
+                <p className="text-sm text-red-500 mt-2 flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  {tagsError}
+                </p>
+              )}
+            </div>
+
+            {/* Anonymous Option */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-foreground font-inter">
+                    Post Anonymously
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    Your question will be posted without showing your name
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAnonymous(!isAnonymous)}
+                  className={isAnonymous ? 'bg-blue/10 border-blue' : ''}
+                >
+                  {isAnonymous ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      Anonymous
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Public
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </form>
 
-        {/* Guidelines */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+        {/* Guidelines Card */}
+        <div className="bg-card border border-border rounded-2xl p-6 mt-8 font-inter">
+          <h3 className="text-lg font-semibold text-blue mb-3 flex items-center">
             <CheckCircle className="h-5 w-5 mr-2" />
             Writing a Good Question
           </h3>
-          <ul className="space-y-2 text-sm text-blue-800">
+          <ul className="space-y-2 text-sm text-foreground">
             <li>• Be specific and provide enough context</li>
             <li>• Include relevant code examples if applicable</li>
             <li>• Explain what you've already tried</li>

@@ -328,10 +328,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Loading question...</div>
+          <div className="text-center text-muted-foreground font-inter">Loading question...</div>
         </div>
       </div>
     );
@@ -339,10 +339,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   if (!questionData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Question not found</div>
+          <div className="text-center text-muted-foreground font-inter">Question not found</div>
         </div>
       </div>
     );
@@ -351,20 +351,20 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const { question, answers } = questionData;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{question.title}</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4 font-inter">{question.title}</h1>
           
           {/* Meta */}
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-6 font-inter">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -384,11 +384,11 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                 variant="outline"
                 size="sm"
                 onClick={toggleBookmark}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 font-inter"
               >
                 {isBookmarked ? (
                   <>
-                    <BookmarkCheck className="h-4 w-4 text-blue-600" />
+                    <BookmarkCheck className="h-4 w-4 text-blue" />
                     Bookmarked
                   </>
                 ) : (
@@ -403,20 +403,20 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         </div>
 
         {/* Question */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-8 font-inter">
           <div className="flex gap-4">
             {/* Vote buttons */}
             <div className="flex flex-col items-center">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue-600' : ''}`}
+                className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue' : ''}`}
                 onClick={() => handleVote('question', question._id, 'upvote')}
                 disabled={voting === question._id}
               >
                 <ThumbsUp className="h-5 w-5" />
               </Button>
-              <div className="text-lg font-semibold text-gray-900 my-2">
+              <div className="text-lg font-semibold text-blue my-2 font-inter">
                 {getVoteCount(question.votes)}
               </div>
               <Button 
@@ -433,7 +433,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
             {/* Question content */}
             <div className="flex-1">
               <div 
-                className="prose max-w-none"
+                className="prose max-w-none text-foreground font-inter"
                 dangerouslySetInnerHTML={{ __html: question.content }}
               />
               
@@ -441,7 +441,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
               <div className="flex flex-wrap gap-2 mt-6">
                 {question.tags.map((tag) => (
                   <Link key={tag} href={`/tags/${tag}`}>
-                    <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 cursor-pointer flex items-center gap-1">
+                    <span className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full hover:bg-blue/20 cursor-pointer flex items-center gap-1 font-inter">
                       <Tag className="h-3 w-3" />
                       {tag}
                     </span>
@@ -455,33 +455,33 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         {/* Answers */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-foreground font-inter">
               {answers.length} Answer{answers.length !== 1 ? 's' : ''}
             </h2>
           </div>
 
           {answers.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No answers yet. Be the first to answer this question!</p>
+            <div className="bg-card rounded-2xl shadow-md border border-border p-8 text-center font-inter">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4 font-inter">No answers yet. Be the first to answer this question!</p>
             </div>
           ) : (
             <div className="space-y-6">
               {answers.map((answer) => (
-                <div key={answer._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div key={answer._id} className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
                   <div className="flex gap-4">
                     {/* Vote buttons */}
                     <div className="flex flex-col items-center">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue-600' : ''}`}
+                        className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue' : ''}`}
                         onClick={() => handleVote('answer', answer._id, 'upvote')}
                         disabled={voting === answer._id}
                       >
                         <ThumbsUp className="h-5 w-5" />
                       </Button>
-                      <div className="text-lg font-semibold text-gray-900 my-2">
+                      <div className="text-lg font-semibold text-blue my-2 font-inter">
                         {getVoteCount(answer.votes)}
                       </div>
                       <Button 
@@ -495,7 +495,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                       </Button>
                       {answer.isAccepted && (
                         <div className="mt-2">
-                          <Check className="h-6 w-6 text-green-600" />
+                          <Check className="h-6 w-6 text-emerald" />
                         </div>
                       )}
                     </div>
@@ -503,22 +503,22 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                     {/* Answer content */}
                     <div className="flex-1">
                       <div 
-                        className="prose max-w-none"
+                        className="prose max-w-none text-foreground font-inter"
                         dangerouslySetInnerHTML={{ __html: answer.content }}
                       />
                       
                       <div className="prose max-w-none mb-4">
                         {eli5Mode[answer._id] && answer.eli5Content ? (
                           <div>
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                              <h4 className="text-blue-800 font-medium mb-2">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
+                            <div className="bg-blue/10 border-l-4 border-blue p-4 mb-4">
+                              <h4 className="text-blue font-medium mb-2 font-inter">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
                               <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => toggleELI5(answer._id)}
-                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              className="text-blue border-blue hover:bg-blue/10 font-inter"
                             >
                               Show Original Answer
                             </Button>
@@ -531,7 +531,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                 variant="outline"
                                 size="sm"
                                 onClick={() => toggleELI5(answer._id)}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                                className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
                               >
                                 🤔 Show ELI5 Version
                               </Button>
@@ -542,7 +542,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                 size="sm"
                                 onClick={() => handleGenerateELI5(answer._id)}
                                 disabled={generatingEli5 === answer._id}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                                className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
                               >
                                 {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
                               </Button>
@@ -552,7 +552,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                       </div>
                       
                       {/* Meta */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-4 font-inter">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1">
                             <User className="h-4 w-4" />
@@ -569,6 +569,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                             size="sm"
                             onClick={() => handleAcceptAnswer(answer._id)}
                             disabled={acceptingAnswer === answer._id}
+                            className="font-inter"
                           >
                             <Check className="h-4 w-4 mr-2" />
                             Accept Answer
@@ -585,8 +586,8 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
         {/* Answer Form */}
         {session ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
+          <div className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
+            <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Your Answer</h3>
             <form onSubmit={handleSubmitAnswer}>
               <RichTextEditor
                 content={answerContent}
@@ -597,7 +598,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                 <Button
                   type="submit"
                   disabled={submittingAnswer || !answerContent.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue hover:bg-blue-light font-inter"
                 >
                   {submittingAnswer ? 'Posting...' : 'Post Answer'}
                 </Button>
@@ -605,10 +606,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
             </form>
           </div>
         ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-            <p className="text-blue-800 mb-4">Please sign in to answer this question</p>
+          <div className="bg-blue/10 border border-blue rounded-2xl p-6 text-center font-inter">
+            <p className="text-blue mb-4 font-inter">Please sign in to answer this question</p>
             <Link href="/auth/signin">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue hover:bg-blue-light font-inter">
                 Sign In to Answer
               </Button>
             </Link>

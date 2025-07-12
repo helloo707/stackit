@@ -63,7 +63,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   };
 
   return (
-    <div className="border-b border-gray-200 p-2">
+    <div className="border-b border-border p-2 bg-card">
       {/* Text Formatting */}
       <div className="flex flex-wrap gap-1 mb-2">
         <Button
@@ -243,14 +243,14 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       {/* Link Input */}
       {showLinkInput && (
-        <div className="mt-2 p-2 bg-gray-50 rounded border">
+        <div className="mt-2 p-2 bg-muted rounded border border-border">
           <div className="flex gap-2">
             <input
               type="url"
               placeholder="Enter URL..."
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+              className="flex-1 px-2 py-1 border border-border rounded text-sm bg-background text-foreground"
               onKeyPress={(e) => e.key === 'Enter' && addLink()}
             />
             <Button size="sm" onClick={addLink} className="text-xs">
@@ -284,12 +284,12 @@ export default function RichTextEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-blue-600 hover:text-blue-800 underline',
+          class: 'text-blue hover:text-blue-dark underline',
         },
       }),
       CodeBlock.configure({
         HTMLAttributes: {
-          class: 'bg-gray-100 p-4 rounded font-mono text-sm',
+          class: 'bg-muted p-4 rounded font-mono text-sm text-foreground',
         },
       }),
       Placeholder.configure({
@@ -303,26 +303,28 @@ export default function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none',
+        class: 'prose prose-sm max-w-none focus:outline-none bg-background text-foreground',
       },
     },
   });
 
   return (
-    <div className={cn("border border-gray-200 rounded-md bg-white", className)}>
+    <div className={cn("border border-border rounded-md bg-background", className)}>
       <MenuBar editor={editor} />
       <EditorContent 
         editor={editor} 
-        className="p-4 focus:outline-none"
+        className="p-4 focus:outline-none bg-background text-foreground"
         style={{ minHeight }}
       />
       <style jsx global>{`
         .ProseMirror {
           outline: none;
           min-height: ${minHeight};
+          background: transparent;
+          color: var(--foreground);
         }
         .ProseMirror p.is-editor-empty:first-child::before {
-          color: #adb5bd;
+          color: var(--muted-foreground, #adb5bd);
           content: attr(data-placeholder);
           float: left;
           height: 0;
@@ -344,21 +346,22 @@ export default function RichTextEditor({
           margin: 0.5rem 0 0.25rem 0;
         }
         .ProseMirror blockquote {
-          border-left: 3px solid #e5e7eb;
+          border-left: 3px solid var(--border, #e5e7eb);
           padding-left: 1rem;
           margin: 1rem 0;
           font-style: italic;
-          color: #6b7280;
+          color: var(--muted-foreground, #6b7280);
         }
         .ProseMirror code {
-          background-color: #f3f4f6;
+          background-color: var(--muted, #f3f4f6);
           padding: 0.125rem 0.25rem;
           border-radius: 0.25rem;
           font-family: monospace;
           font-size: 0.875rem;
+          color: var(--foreground);
         }
         .ProseMirror pre {
-          background-color: #f3f4f6;
+          background-color: var(--muted, #f3f4f6);
           padding: 1rem;
           border-radius: 0.5rem;
           overflow-x: auto;
@@ -376,11 +379,11 @@ export default function RichTextEditor({
           margin: 0.25rem 0;
         }
         .ProseMirror a {
-          color: #2563eb;
+          color: var(--blue, #2563eb);
           text-decoration: underline;
         }
         .ProseMirror a:hover {
-          color: #1d4ed8;
+          color: var(--blue-dark, #1d4ed8);
         }
       `}</style>
     </div>

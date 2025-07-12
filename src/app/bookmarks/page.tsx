@@ -140,31 +140,31 @@ export default function BookmarksPage() {
 
   if (loading && bookmarks.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">Loading bookmarks...</div>
+          <div className="text-center text-muted-foreground font-inter">Loading bookmarks...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+          <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <BookmarkCheck className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">My Bookmarks</h1>
+            <BookmarkCheck className="h-8 w-8 text-blue" />
+            <h1 className="text-3xl font-bold text-foreground font-inter">My Bookmarks</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground font-inter">
             {pagination.total > 0 
               ? `You have ${pagination.total} bookmarked question${pagination.total !== 1 ? 's' : ''}`
               : 'No bookmarks yet. Start bookmarking questions you find interesting!'
@@ -175,47 +175,47 @@ export default function BookmarksPage() {
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <p className="text-red-800">{error}</p>
+            <p className="text-red-800 font-inter">{error}</p>
           </div>
         )}
 
         {/* Bookmarks List */}
         <div className="space-y-4">
           {bookmarks.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <BookmarkCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No bookmarks found.</p>
+            <div className="bg-card rounded-2xl shadow-md border border-border p-8 text-center">
+              <BookmarkCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4 font-inter">No bookmarks found.</p>
               <Link href="/questions">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-blue hover:bg-blue-light font-inter">
                   Browse Questions
                 </Button>
               </Link>
             </div>
           ) : (
             bookmarks.map((bookmark) => (
-              <div key={bookmark._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div key={bookmark._id} className="bg-card rounded-2xl shadow-md border border-border p-6 hover:border-blue hover:shadow-lg transition-all font-inter">
                 <div className="flex gap-4">
                   {/* Stats */}
                   <div className="flex flex-col items-center text-center min-w-[80px]">
-                    <div className="text-lg font-semibold text-gray-900">{getVoteCount(bookmark.question.votes)}</div>
-                    <div className="text-sm text-gray-500">votes</div>
-                    <div className="text-lg font-semibold text-gray-900 mt-2">{getAnswerCount(bookmark.question.answers)}</div>
-                    <div className="text-sm text-gray-500">answers</div>
-                    <div className="text-sm text-gray-500 mt-2">{bookmark.question.views}</div>
-                    <div className="text-xs text-gray-400">views</div>
+                    <div className="text-lg font-semibold text-blue font-inter">{getVoteCount(bookmark.question.votes)}</div>
+                    <div className="text-xs text-muted-foreground font-inter">votes</div>
+                    <div className="text-lg font-semibold text-emerald mt-2 font-inter">{getAnswerCount(bookmark.question.answers)}</div>
+                    <div className="text-xs text-muted-foreground font-inter">answers</div>
+                    <div className="text-xs text-orange mt-2 font-inter">{bookmark.question.views}</div>
+                    <div className="text-xs text-muted-foreground font-inter">views</div>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <Link href={`/questions/${bookmark.question._id}`}>
-                        <h3 className="text-lg font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">
+                        <h3 className="text-lg font-semibold text-foreground hover:text-blue transition-colors cursor-pointer font-inter">
                           {bookmark.question.title}
                         </h3>
                       </Link>
                       <div className="flex items-center gap-2">
                         {getAnswerCount(bookmark.question.answers) > 0 && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-inter">
                             Answered
                           </span>
                         )}
@@ -230,7 +230,7 @@ export default function BookmarksPage() {
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-3 line-clamp-2">
+                    <p className="text-muted-foreground mb-3 line-clamp-2 font-inter">
                       {bookmark.question.content}
                     </p>
                     
@@ -238,7 +238,7 @@ export default function BookmarksPage() {
                     <div className="flex flex-wrap gap-2 mb-3">
                       {bookmark.question.tags.map((tag) => (
                         <Link key={tag} href={`/tags/${tag}`}>
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200 cursor-pointer">
+                          <span className="bg-blue/10 text-blue text-xs px-2 py-1 rounded hover:bg-blue/20 cursor-pointer font-inter">
                             {tag}
                           </span>
                         </Link>
@@ -246,7 +246,7 @@ export default function BookmarksPage() {
                     </div>
                     
                     {/* Meta */}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-inter">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
@@ -276,6 +276,7 @@ export default function BookmarksPage() {
                 size="sm" 
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
+                className="font-inter"
               >
                 Previous
               </Button>
@@ -288,6 +289,7 @@ export default function BookmarksPage() {
                     variant={currentPage === pageNum ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCurrentPage(pageNum)}
+                    className="font-inter"
                   >
                     {pageNum}
                   </Button>
@@ -296,11 +298,12 @@ export default function BookmarksPage() {
               
               {pagination.pages > 5 && (
                 <>
-                  <span className="text-gray-500">...</span>
+                  <span className="text-muted-foreground font-inter">...</span>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(pagination.pages)}
+                    className="font-inter"
                   >
                     {pagination.pages}
                   </Button>
@@ -312,6 +315,7 @@ export default function BookmarksPage() {
                 size="sm" 
                 disabled={currentPage === pagination.pages}
                 onClick={() => setCurrentPage(currentPage + 1)}
+                className="font-inter"
               >
                 Next
               </Button>

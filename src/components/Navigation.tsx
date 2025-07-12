@@ -124,7 +124,7 @@ export default function Navigation() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className={isActive('/tags') ? 'text-muted-foreground hover:text-foreground hover:bg-accent : ''}
+                className={isActive('/tags') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
               >
                 Tags
               </Button>
@@ -195,32 +195,32 @@ export default function Navigation() {
                   </div>
                   
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="absolute right-0 mt-2 w-48 bg-card rounded-2xl shadow-lg py-1 z-50 border border-border font-inter">
                       <Link href="/dashboard">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <User className="h-4 w-4 mr-2" />
                           Dashboard
                         </Button>
                       </Link>
                       <Link href="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start text-popover-foreground hover:bg-accent">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground hover:bg-accent">
                           <User className="h-4 w-4 mr-2" />
                           Profile
                         </Button>
                       </Link>
                       <Link href="/my-questions">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <MessageSquare className="h-4 w-4 mr-2" />
                           My Questions
                         </Button>
                       </Link>
                       <Link href="/my-answers">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-foreground">
                           <TrendingUp className="h-4 w-4 mr-2" />
                           My Answers
                         </Button>
                       </Link>
-                      <div className="border-t border-gray-200 my-1" />
+                      <div className="border-t border-border my-1" />
                       <Button 
                         variant="ghost" 
                         size="sm" 
