@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db';
 import Question from '@/models/Question';
 import User from '@/models/User';
 import mongoose from 'mongoose';
+import Notification from '@/models/Notification';
 
 export async function POST(
   request: NextRequest,
@@ -102,8 +103,38 @@ export async function POST(
       }
     }
 
+    // Create notification for question author if the voter is not the author
+    if (question.author.toString() !== user._id.toString()) {
+      try {
+        // Create notification using Notification model
+        await Notification.create({
+          recipient: question.author,
+          sender: user._id,
+          type: 'vote',
+          title: 'Question Voted',
+          message: `${user.name} ${voteType}d your question: "${question.title}"`,
+          relatedQuestion: question._id,
+          isRead: false,
+          metadata: {
+            questionTitle: question.title,
+            senderName: user.name,
+            senderImage: user.image,
+            actionDetails: {
+              who: user.name,
+              what: `${voteType}d a question`,
+              where: question.title
+            }
+          },
+        });
+
+        console.log('Question vote notification created successfully');
+      } catch (notificationError) {
+        console.error('Failed to create question vote notification:', notificationError);
+      }
+    }
+
     return NextResponse.json({
-      message: 'Vote updated successfully',
+      message: 'Vote processed successfully',
       question: updatedQuestion,
     });
   } catch (error) {

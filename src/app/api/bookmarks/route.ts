@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Bookmark from '@/models/Bookmark';
 import User from '@/models/User';
+import Question from '@/models/Question';
+import Notification from '@/models/Notification';
 
 // GET - Fetch user's bookmarks
 export async function GET(request: NextRequest) {
@@ -102,6 +104,37 @@ export async function POST(request: NextRequest) {
       user: user._id,
       question: questionId,
     });
+
+    // Create notification for question author if the bookmarker is not the author
+    const question = await Question.findById(questionId);
+    if (question && question.author.toString() !== user._id.toString()) {
+      try {
+        // Create notification using Notification model
+        await Notification.create({
+          recipient: question.author,
+          sender: user._id,
+          type: 'bookmark',
+          title: 'Question Bookmarked',
+          message: `${user.name} bookmarked your question: "${question.title}"`,
+          relatedQuestion: question._id,
+          isRead: false,
+          metadata: {
+            questionTitle: question.title,
+            senderName: user.name,
+            senderImage: user.image,
+            actionDetails: {
+              who: user.name,
+              what: 'bookmarked a question',
+              where: question.title
+            }
+          },
+        });
+
+        console.log('Bookmark notification created successfully');
+      } catch (notificationError) {
+        console.error('Failed to create bookmark notification:', notificationError);
+      }
+    }
 
     return NextResponse.json({
       message: 'Question bookmarked successfully',

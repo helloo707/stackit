@@ -1,48 +1,84 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
-  name: string;
+  name?: string;
   email: string;
-  image?: string;
   password?: string;
   role: 'guest' | 'user' | 'admin';
   reputation: number;
   bookmarks: mongoose.Types.ObjectId[];
+  notifications: {
+    _id?: mongoose.Types.ObjectId;
+    type: 'answer' | 'vote' | 'accept' | 'flag' | 'admin';
+    title: string;
+    message: string;
+    relatedQuestion?: mongoose.Types.ObjectId;
+    relatedAnswer?: mongoose.Types.ObjectId;
+    isRead: boolean;
+    createdAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 const UserSchema = new Schema<IUser>({
-  name: {
-    type: String,
-    required: true,
+  name: { type: String },
+  email: { 
+    type: String, 
+    required: true, 
+    unique: true 
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
+  password: { type: String },
+  role: { 
+    type: String, 
+    enum: ['guest', 'user', 'admin'], 
+    default: 'user' 
   },
-  image: {
-    type: String,
+  reputation: { 
+    type: Number, 
+    default: 0 
   },
-  password: {
-    type: String,
-  },
-  role: {
-    type: String,
-    enum: ['guest', 'user', 'admin'],
-    default: 'user',
-  },
-  reputation: {
-    type: Number,
-    default: 0,
-  },
-  bookmarks: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Question',
+  bookmarks: [{ 
+    type: Schema.Types.ObjectId, 
+    ref: 'Question' 
   }],
+  notifications: [{
+    type: {
+      type: String,
+      enum: ['answer', 'vote', 'accept', 'flag', 'admin'],
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    relatedQuestion: {
+      type: Schema.Types.ObjectId,
+      ref: 'Question',
+    },
+    relatedAnswer: {
+      type: Schema.Types.ObjectId,
+      ref: 'Answer',
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    }
+  }]
 }, {
   timestamps: true,
 });
+
+// Index for performance
+UserSchema.index({ email: 1 });
+UserSchema.index({ 'notifications.createdAt': -1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 
