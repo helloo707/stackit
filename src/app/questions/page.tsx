@@ -309,85 +309,95 @@ export default function QuestionsPage() {
             </div>
           </div>
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-            {/* Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Questions</option>
-                <option value="unanswered">Unanswered</option>
-                <option value="answered">Answered</option>
-                <option value="no-answers">No Answers</option>
-              </select>
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Search className="h-5 w-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Search & Filters</h3>
             </div>
-            {/* Time Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
-              <select
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Any Time</option>
-                <option value="24h">Last 24 hours</option>
-                <option value="week">Last week</option>
-                <option value="month">Last month</option>
-              </select>
+            
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+              {/* Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Filter</label>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm"
+                >
+                  <option value="all">All Questions</option>
+                  <option value="unanswered">Unanswered</option>
+                  <option value="answered">Answered</option>
+                  <option value="no-answers">No Answers</option>
+                </select>
+              </div>
+              {/* Time Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Time</label>
+                <select
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm"
+                >
+                  <option value="all">Any Time</option>
+                  <option value="24h">Last 24 hours</option>
+                  <option value="week">Last week</option>
+                  <option value="month">Last month</option>
+                </select>
+              </div>
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Status</label>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm"
+                >
+                  <option value="all">Any Status</option>
+                  <option value="accepted">Has Accepted Answer</option>
+                  <option value="no-accepted">No Accepted Answer</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              {/* Popularity Filter */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Popularity</label>
+                <select
+                  value={popularity}
+                  onChange={e => setPopularity(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm"
+                >
+                  <option value="default">Default</option>
+                  <option value="most-upvoted">Most Upvoted</option>
+                  <option value="most-viewed">Most Viewed</option>
+                  <option value="most-answered">Most Answered</option>
+                  <option value="hot">Hot/Trending</option>
+                </select>
+              </div>
+              {/* Sort (existing) */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Sort</label>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="votes">Most Voted</option>
+                  <option value="views">Most Viewed</option>
+                  <option value="recent">Recently Active</option>
+                </select>
+              </div>
             </div>
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={status}
-                onChange={e => setStatus(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Any Status</option>
-                <option value="accepted">Has Accepted Answer</option>
-                <option value="no-accepted">No Accepted Answer</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-            {/* Popularity Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Popularity</label>
-              <select
-                value={popularity}
-                onChange={e => setPopularity(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="default">Default</option>
-                <option value="most-upvoted">Most Upvoted</option>
-                <option value="most-viewed">Most Viewed</option>
-                <option value="most-answered">Most Answered</option>
-                <option value="hot">Hot/Trending</option>
-              </select>
-            </div>
-            {/* Sort (existing) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="newest">Newest</option>
-                <option value="votes">Most Voted</option>
-                <option value="views">Most Viewed</option>
-                <option value="recent">Recently Active</option>
-              </select>
-            </div>
+            
             {/* Clear Filters */}
-            <div className="flex items-end">
+            <div className="flex items-center justify-between">
               {hasActiveFilters && (
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="w-full md:w-auto"
+                  className="border-orange-500 text-orange-400 hover:bg-orange-500/20 backdrop-blur-sm"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear Filters
