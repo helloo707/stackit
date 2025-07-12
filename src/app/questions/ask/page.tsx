@@ -66,18 +66,18 @@ export default function AskQuestionPage() {
     let isValid = true;
     
     // Title validation
-    if (!title.trim()) {
-      setTitleError('Title is required');
-      isValid = false;
-    } else if (title.trim().length < 10) {
-      setTitleError('Title must be at least 10 characters long');
-      isValid = false;
-    } else if (title.trim().length > 300) {
-      setTitleError('Title must be less than 300 characters');
-      isValid = false;
-    } else {
-      setTitleError('');
-    }
+    // if (!title.trim()) {
+    //   setTitleError('Title is required');
+    //   isValid = false;
+    // } else if (title.trim().length < 5) {
+    //   setTitleError('Title must be at least 10 characters long');
+    //   isValid = false;
+    // } else if (title.trim().length > 5) {
+    //   setTitleError('Title must be less than 300 characters');
+    //   isValid = false;
+    // } else {
+    //   setTitleError('');
+    // }
 
     // Content validation
     if (!content.trim()) {

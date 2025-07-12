@@ -1,26 +1,35 @@
 'use client';
 
+import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
+import { 
+  Home, 
+  BookOpen, 
+  FileQuestionMark, 
+  User, 
+  LogOut, 
+  Bell 
+} from 'lucide-react';
+import { Button } from './ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Search, 
-  Bell, 
-  User, 
-  LogIn, 
-  LogOut, 
   Plus,
   Bookmark,
   Settings,
   Menu,
   X,
   TrendingUp,
-  MessageSquare
+  MessageSquare,
+  Shield,
+  Flag,
+  Trash2,
+  LogIn
 } from 'lucide-react';
-import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import NotificationModal from './NotificationModal';
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -30,6 +39,8 @@ export default function Navigation() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(3); // Mock notification count
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Close mobile menu when route changes
@@ -48,6 +59,30 @@ export default function Navigation() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showUserMenu]);
+
+  useEffect(() => {
+    const fetchUnreadNotifications = async () => {
+      if (!session) return;
+
+      try {
+        const response = await fetch('/api/notifications?filter=unread');
+        if (response.ok) {
+          const data = await response.json();
+          // Use pagination total or default to 0 if no notifications
+          setUnreadNotificationsCount(data.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread notifications', error);
+        setUnreadNotificationsCount(0);
+      }
+    };
+
+    fetchUnreadNotifications();
+    
+    // Optionally, set up a periodic check
+    const intervalId = setInterval(fetchUnreadNotifications, 5 * 60 * 1000); // Every 5 minutes
+    return () => clearInterval(intervalId);
+  }, [session]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,16 +187,16 @@ export default function Navigation() {
                   </Button>
                 </Link>
 
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="relative"
-                  onClick={clearNotifications}
+                  onClick={() => setShowNotificationModal(true)}
                 >
                   <Bell className="h-4 w-4" />
-                  {notifications > 0 && (
+                  {unreadNotificationsCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {notifications}
+                      {unreadNotificationsCount}
                     </span>
                   )}
                 </Button>
@@ -220,7 +255,42 @@ export default function Navigation() {
                           My Answers
                         </Button>
                       </Link>
-                      <div className="border-t border-border my-1" />
+                      
+                      {/* Admin Links */}
+                      {session.user.role === 'admin' && (
+                        <>
+                          <div className="border-t border-gray-200 my-1" />
+                          <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Admin
+                          </div>
+                          <Link href="/admin/dashboard">
+                            <Button variant="ghost" size="sm" className="w-full justify-start">
+                              <Shield className="h-4 w-4 mr-2" />
+                              Admin Dashboard
+                            </Button>
+                          </Link>
+                          <Link href="/admin/questions">
+                            <Button variant="ghost" size="sm" className="w-full justify-start">
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Manage Questions
+                            </Button>
+                          </Link>
+                          <Link href="/admin/flags">
+                            <Button variant="ghost" size="sm" className="w-full justify-start">
+                              <Flag className="h-4 w-4 mr-2" />
+                              Flagged Content
+                            </Button>
+                          </Link>
+                          <Link href="/admin/deleted-content">
+                            <Button variant="ghost" size="sm" className="w-full justify-start">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Deleted Content
+                            </Button>
+                          </Link>
+                        </>
+                      )}
+                      
+                      <div className="border-t border-gray-200 my-1" />
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -318,6 +388,20 @@ export default function Navigation() {
                     </Button>
                   </Link>
 
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`w-full justify-start ${isActive('/notifications') ? 'bg-blue-50 text-blue-700' : ''}`}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Notifications
+                    {unreadNotificationsCount > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadNotificationsCount}
+                      </span>
+                    )}
+                  </Button>
+
                   <Link href="/dashboard">
                     <Button 
                       variant="ghost" 
@@ -338,6 +422,56 @@ export default function Navigation() {
                       Profile
                     </Button>
                   </Link>
+
+                  {/* Admin Mobile Links */}
+                  {session.user.role === 'admin' && (
+                    <>
+                      <div className="border-t border-gray-200 my-2" />
+                      <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Admin
+                      </div>
+                      <Link href="/admin/dashboard">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`w-full justify-start ${isActive('/admin/dashboard') ? 'bg-blue-50 text-blue-700' : ''}`}
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Button>
+                      </Link>
+                      <Link href="/admin/questions">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`w-full justify-start ${isActive('/admin/questions') ? 'bg-blue-50 text-blue-700' : ''}`}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Manage Questions
+                        </Button>
+                      </Link>
+                      <Link href="/admin/flags">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`w-full justify-start ${isActive('/admin/flags') ? 'bg-blue-50 text-blue-700' : ''}`}
+                        >
+                          <Flag className="h-4 w-4 mr-2" />
+                          Flagged Content
+                        </Button>
+                      </Link>
+                      <Link href="/admin/deleted-content">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`w-full justify-start ${isActive('/admin/deleted-content') ? 'bg-blue-50 text-blue-700' : ''}`}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Deleted Content
+                        </Button>
+                      </Link>
+                    </>
+                  )}
 
                   <Button 
                     variant="ghost" 
@@ -361,6 +495,10 @@ export default function Navigation() {
           </div>
         )}
       </div>
+      <NotificationModal
+        open={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+      />
     </nav>
   );
 } 

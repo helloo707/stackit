@@ -142,7 +142,7 @@ export async function DELETE(
     // Soft delete the answer
     await Answer.findByIdAndUpdate(id, {
       isDeleted: true,
-      updatedAt: new Date(),
+      deletedAt: new Date(),
     });
 
     return NextResponse.json({

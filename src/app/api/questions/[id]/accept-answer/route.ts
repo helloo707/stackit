@@ -85,6 +85,33 @@ export async function POST(
       acceptedAnswer: answerId,
     });
 
+    // Create notification for answer author
+    if (answer.author.toString() !== user._id.toString()) {
+      try {
+        const notificationResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'accept',
+            title: 'Answer Accepted',
+            message: `Your answer to the question "${question.title}" has been accepted.`,
+            recipientId: answer.author,
+            relatedQuestion: question._id,
+            relatedAnswer: answer._id,
+          }),
+        });
+
+        console.log('Answer acceptance notification creation response:', {
+          status: notificationResponse.status,
+          body: await notificationResponse.json(),
+        });
+      } catch (notificationError) {
+        console.error('Failed to create answer acceptance notification:', notificationError);
+      }
+    }
+
     return NextResponse.json({
       message: 'Answer accepted successfully',
       answer: updatedAnswer,

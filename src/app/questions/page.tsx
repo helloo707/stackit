@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import FlagButton from '@/components/FlagButton';
 import { 
   Search, 
   MessageSquare,
@@ -452,17 +453,30 @@ export default function QuestionsPage() {
                           {tag}
                         </span>
                       </Link>
-                    ))}
-                  </div>
-                  {/* Meta */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
-                    <div className="flex items-center space-x-4">
-                      <span>
-                        Asked {formatDate(question.createdAt)}
-                      </span>
-                      <span>
-                        by {question.isAnonymous ? 'Anonymous' : question.author.name}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {getAnswerCount(question) > 0 && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                            Answered
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleBookmark(question._id)}
+                          className="p-1"
+                        >
+                          {bookmarkedQuestions.has(question._id) ? (
+                            <BookmarkCheck className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                          )}
+                        </Button>
+                        <FlagButton 
+                          contentType="question" 
+                          contentId={question._id} 
+                          className="p-1"
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Eye className="h-4 w-4" />
