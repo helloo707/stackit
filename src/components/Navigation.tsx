@@ -1,25 +1,31 @@
 'use client';
 
+import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
+import { 
+  Home, 
+  BookOpen, 
+  FileQuestionMark, 
+  User, 
+  LogOut, 
+  Bell 
+} from 'lucide-react';
+import { Button } from './ui/button';
 import { Input } from '@/components/ui/input';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Search, 
-  Bell, 
-  User, 
-  LogIn, 
-  LogOut, 
   Plus,
   Bookmark,
   Settings,
   Menu,
   X,
   TrendingUp,
-  MessageSquare
+  MessageSquare,
+  LogIn
 } from 'lucide-react';
-import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import NotificationModal from './NotificationModal';
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -29,6 +35,8 @@ export default function Navigation() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(3); // Mock notification count
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Close mobile menu when route changes
@@ -47,6 +55,30 @@ export default function Navigation() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showUserMenu]);
+
+  useEffect(() => {
+    const fetchUnreadNotifications = async () => {
+      if (!session) return;
+
+      try {
+        const response = await fetch('/api/notifications?filter=unread');
+        if (response.ok) {
+          const data = await response.json();
+          // Use pagination total or default to 0 if no notifications
+          setUnreadNotificationsCount(data.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread notifications', error);
+        setUnreadNotificationsCount(0);
+      }
+    };
+
+    fetchUnreadNotifications();
+    
+    // Optionally, set up a periodic check
+    const intervalId = setInterval(fetchUnreadNotifications, 5 * 60 * 1000); // Every 5 minutes
+    return () => clearInterval(intervalId);
+  }, [session]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,16 +180,16 @@ export default function Navigation() {
                   </Button>
                 </Link>
 
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="relative"
-                  onClick={clearNotifications}
+                  onClick={() => setShowNotificationModal(true)}
                 >
                   <Bell className="h-4 w-4" />
-                  {notifications > 0 && (
+                  {unreadNotificationsCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {notifications}
+                      {unreadNotificationsCount}
                     </span>
                   )}
                 </Button>
@@ -314,6 +346,20 @@ export default function Navigation() {
                     </Button>
                   </Link>
 
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`w-full justify-start ${isActive('/notifications') ? 'bg-blue-50 text-blue-700' : ''}`}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Notifications
+                    {unreadNotificationsCount > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadNotificationsCount}
+                      </span>
+                    )}
+                  </Button>
+
                   <Link href="/dashboard">
                     <Button 
                       variant="ghost" 
@@ -357,6 +403,10 @@ export default function Navigation() {
           </div>
         )}
       </div>
+      <NotificationModal
+        open={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+      />
     </nav>
   );
 } 
