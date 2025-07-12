@@ -192,6 +192,12 @@ export default function Navigation() {
                   
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                      <Link href="/dashboard">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <User className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
                       <Link href="/profile">
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <User className="h-4 w-4 mr-2" />
@@ -316,6 +322,16 @@ export default function Navigation() {
                     </Button>
                   </Link>
 
+                  <Link href="/dashboard">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`w-full justify-start ${isActive('/dashboard') ? 'bg-blue-50 text-blue-700' : ''}`}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
                   <Link href="/profile">
                     <Button 
                       variant="ghost" 

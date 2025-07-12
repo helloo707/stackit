@@ -177,7 +177,7 @@ export async function prioritizeQuestions(questions: QuestionSummary[]): Promise
     const questionMap = new Map(questions.map(q => [q._id, q]));
     const prioritizedQuestions = prioritizedIds
       .map((id: string) => questionMap.get(id))
-      .filter(Boolean);
+      .filter((q): q is QuestionSummary => q !== undefined);
 
     const remainingQuestions = questions.filter(q => !prioritizedIds.includes(q._id));
 

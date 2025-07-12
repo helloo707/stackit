@@ -126,7 +126,9 @@ export async function GET(request: NextRequest) {
     // Apply AI prioritization if no specific sort is requested and no search/filter
     if (sort === 'newest' && !search && filter === 'all' && process.env.GEMINI_API_KEY) {
       try {
-        questions = await prioritizeQuestions(questions);
+        const prioritized = await prioritizeQuestions(questions as any);
+        // Patch __v to always be a number (default to 0 if missing)
+        questions = prioritized.map((q: any) => ({ ...q, __v: typeof q.__v === 'number' ? q.__v : 0 }));
       } catch (error) {
         console.error('AI prioritization failed, using default sorting:', error);
       }

@@ -8,7 +8,7 @@ import User from '@/models/User';
 // GET - Check if a question is bookmarked by the user
 export async function GET(
   request: NextRequest,
-  { params }: { params: { questionId: string } }
+  { params }: { params: Promise<{ questionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,9 +24,10 @@ export async function GET(
       return NextResponse.json({ isBookmarked: false });
     }
 
+    const { questionId } = await params;
     const bookmark = await Bookmark.findOne({
       user: user._id,
-      question: params.questionId,
+      question: questionId,
     });
 
     return NextResponse.json({

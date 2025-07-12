@@ -8,7 +8,7 @@ import User from '@/models/User';
 // DELETE - Remove a bookmark
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { questionId: string } }
+  { params }: { params: Promise<{ questionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,9 +24,10 @@ export async function DELETE(
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
+    const { questionId } = await params;
     const bookmark = await Bookmark.findOneAndDelete({
       user: user._id,
-      question: params.questionId,
+      question: questionId,
     });
 
     if (!bookmark) {

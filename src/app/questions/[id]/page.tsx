@@ -111,7 +111,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     if (!session) return;
     
     try {
-      const response = await fetch(`/api/bookmarks/check/${params.id}`);
+      const response = await fetch(`/api/bookmarks/check/${id}`);
       if (response.ok) {
         const data = await response.json();
         setIsBookmarked(data.isBookmarked);
@@ -130,7 +130,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     try {
       if (isBookmarked) {
         // Remove bookmark
-        const response = await fetch(`/api/bookmarks/${params.id}`, {
+        const response = await fetch(`/api/bookmarks/${id}`, {
           method: 'DELETE',
         });
 
@@ -147,7 +147,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ questionId: params.id }),
+          body: JSON.stringify({ questionId: id }),
         });
 
         if (response.ok) {

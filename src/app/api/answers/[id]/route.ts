@@ -10,9 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await dbConnect();
-    
     const { id } = await params;
+    
+    await dbConnect();
     
     const answer = await Answer.findById(id)
       .populate('author', 'name email image')
@@ -20,10 +20,7 @@ export async function GET(
       .lean();
 
     if (!answer) {
-      return NextResponse.json(
-        { message: 'Answer not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Answer not found' }, { status: 404 });
     }
 
     return NextResponse.json({ answer });
@@ -47,8 +44,6 @@ export async function PUT(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
-    
     const { id } = await params;
     const { content } = await request.json();
 
@@ -59,6 +54,8 @@ export async function PUT(
       );
     }
 
+    await dbConnect();
+    
     // Get user
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -68,10 +65,7 @@ export async function PUT(
     // Check if answer exists and user is the author
     const answer = await Answer.findById(id);
     if (!answer) {
-      return NextResponse.json(
-        { message: 'Answer not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Answer not found' }, { status: 404 });
     }
 
     if (answer.author.toString() !== user._id.toString()) {
@@ -85,11 +79,18 @@ export async function PUT(
     const updatedAnswer = await Answer.findByIdAndUpdate(
       id,
       {
-        content,
+        content: content.trim(),
         updatedAt: new Date(),
       },
       { new: true }
     ).populate('author', 'name email image');
+
+    if (!updatedAnswer) {
+      return NextResponse.json(
+        { message: 'Failed to update answer' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Answer updated successfully',
@@ -115,9 +116,9 @@ export async function DELETE(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
-    
     const { id } = await params;
+    
+    await dbConnect();
     
     // Get user
     const user = await User.findOne({ email: session.user.email });
@@ -128,10 +129,7 @@ export async function DELETE(
     // Check if answer exists and user is the author
     const answer = await Answer.findById(id);
     if (!answer) {
-      return NextResponse.json(
-        { message: 'Answer not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Answer not found' }, { status: 404 });
     }
 
     if (answer.author.toString() !== user._id.toString()) {
@@ -141,10 +139,10 @@ export async function DELETE(
       );
     }
 
-    // Soft delete answer
+    // Soft delete the answer
     await Answer.findByIdAndUpdate(id, {
       isDeleted: true,
-      deletedAt: new Date(),
+      updatedAt: new Date(),
     });
 
     return NextResponse.json({

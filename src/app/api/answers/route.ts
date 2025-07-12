@@ -64,10 +64,17 @@ export async function POST(request: NextRequest) {
       .populate('author', 'name email image')
       .lean();
 
+    if (!populatedAnswer) {
+      return NextResponse.json(
+        { message: 'Failed to create answer' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       id: answer._id,
       content: answer.content,
-      author: populatedAnswer.author,
+      author: (populatedAnswer as any).author,
       questionId: answer.question,
       message: 'Answer created successfully',
     });
