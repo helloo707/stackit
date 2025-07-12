@@ -20,6 +20,12 @@ export interface IQuestion extends Document {
     reason: string;
     createdAt: Date;
   }[];
+  bounty?: {
+    amount: number;
+    status: 'open' | 'awarded' | 'cancelled';
+    awardedTo?: mongoose.Types.ObjectId;
+    awardedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,6 +96,12 @@ const QuestionSchema = new Schema<IQuestion>({
       default: Date.now,
     },
   }],
+  bounty: {
+    amount: { type: Number, default: 0 },
+    status: { type: String, enum: ['open', 'awarded', 'cancelled'], default: 'open' },
+    awardedTo: { type: Schema.Types.ObjectId, ref: 'User' },
+    awardedAt: { type: Date },
+  },
 }, {
   timestamps: true,
 });

@@ -23,7 +23,7 @@ export async function GET() {
     }
 
     // Type assertion to handle MongoDB lean() return type
-    const userDoc = user as any;
+    const userDoc = user as Record<string, unknown>;
 
     return NextResponse.json({
       user: {
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Type assertion to handle MongoDB return type
-    const userDoc = updatedUser as any;
+    const userDoc = updatedUser as Record<string, unknown>;
 
     return NextResponse.json({
       message: 'Profile updated successfully',
