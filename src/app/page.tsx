@@ -19,13 +19,13 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status === 'loading') return;
+  // useEffect(() => {
+  //   if (status === 'loading') return;
     
-    if (session) {
-      router.push('/dashboard');
-    }
-  }, [session, status, router]);
+  //   if (session) {
+  //     router.push('/dashboard');
+  //   }
+  // }, [session, status, router]);
 
   // Show loading while checking session
   if (status === 'loading') {
@@ -43,9 +43,9 @@ export default function HomePage() {
   }
 
   // Don't render the landing page if user is logged in (will redirect to dashboard)
-  if (session) {
-    return null;
-  }
+  // if (session) {
+  //   return null;
+  // }
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />

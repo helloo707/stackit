@@ -72,8 +72,14 @@ export default function DashboardPage() {
       return;
     }
 
+    // Redirect admin users to admin dashboard
+    if (session.user.role === 'admin') {
+      router.push('/admin/dashboard');
+      return;
+    }
+
     fetchUserData();
-  }, [session, status]);
+  }, [session, status, router]);
 
   const fetchUserData = async () => {
     try {

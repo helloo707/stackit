@@ -216,14 +216,6 @@ export default function Navigation() {
                           My Answers
                         </Button>
                       </Link>
-                      {session.user.role === 'admin' && (
-                        <Link href="/admin">
-                          <Button variant="ghost" size="sm" className="w-full justify-start">
-                            <Settings className="h-4 w-4 mr-2" />
-                            Admin Panel
-                          </Button>
-                        </Link>
-                      )}
                       <div className="border-t border-gray-200 my-1" />
                       <Button 
                         variant="ghost" 

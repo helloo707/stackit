@@ -30,8 +30,18 @@ export default function SignInPage() {
       if (result?.error) {
         toast.error('Invalid email or password');
       } else {
+        // Fetch user details to check role
+        const response = await fetch(`/api/users/me`);
+        const userData = await response.json();
+
         toast.success('Signed in successfully!');
-        router.push('/');
+        
+        // Redirect based on user role
+        if (userData.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/');
+        }
       }
     } catch {
       toast.error('An error occurred during sign in');
