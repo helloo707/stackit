@@ -100,23 +100,23 @@ export default function NotificationModal({ open, onClose }: { open: boolean; on
     switch (notification.type) {
       case 'answer':
         return {
-          icon: <MessageSquare className="h-5 w-5 text-blue-600" />, details: notification.metadata?.questionTitle
+          icon: <MessageSquare className="h-5 w-5 text-blue" />, details: notification.metadata?.questionTitle
         };
       case 'vote':
         return {
-          icon: <ThumbsUp className="h-5 w-5 text-green-600" />, details: notification.metadata?.questionTitle
+          icon: <ThumbsUp className="h-5 w-5 text-green" />, details: notification.metadata?.questionTitle
         };
       case 'bookmark':
         return {
-          icon: <Bookmark className="h-5 w-5 text-purple-600" />, details: notification.metadata?.questionTitle
+          icon: <Bookmark className="h-5 w-5 text-purple" />, details: notification.metadata?.questionTitle
         };
       case 'accept':
         return {
-          icon: <Award className="h-5 w-5 text-yellow-600" />, details: notification.metadata?.questionTitle
+          icon: <Award className="h-5 w-5 text-yellow" />, details: notification.metadata?.questionTitle
         };
       default:
         return {
-          icon: <Bell className="h-5 w-5 text-gray-600" />, details: ''
+          icon: <Bell className="h-5 w-5 text-gray" />, details: ''
         };
     }
   };
@@ -134,44 +134,47 @@ export default function NotificationModal({ open, onClose }: { open: boolean; on
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black bg-opacity-30">
-      <div ref={modalRef} className="mt-16 mr-6 w-full max-w-md bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/40">
+      <div
+        ref={modalRef}
+        className="mt-16 mr-6 w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden animate-fade-in"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/60">
           <div className="flex items-center gap-2">
-            <Bell className="h-6 w-6 text-blue-600" />
-            <span className="font-semibold text-lg">Notifications</span>
+            <Bell className="h-6 w-6 text-blue" />
+            <span className="font-semibold text-lg text-foreground font-inter">Notifications</span>
             {unreadCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-500 text-white">{unreadCount}</span>
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue text-white font-inter">{unreadCount}</span>
             )}
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-200">
-            <X className="h-5 w-5" />
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted transition-colors">
+            <X className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <div className="p-6 text-center text-gray-500">Loading...</div>
+            <div className="p-6 text-center text-muted-foreground font-inter">Loading...</div>
           ) : error ? (
-            <div className="p-6 text-center text-red-500">{error}</div>
+            <div className="p-6 text-center text-red-500 font-inter">{error}</div>
           ) : notifications.length === 0 ? (
-            <div className="p-6 text-center text-gray-400">No notifications found.</div>
+            <div className="p-6 text-center text-muted-foreground font-inter">No notifications found.</div>
           ) : (
             notifications.map(notification => {
               const { icon, details } = getNotificationDetails(notification);
               return (
                 <div
                   key={notification._id}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition ${notification.isRead ? '' : 'bg-blue-50'}`}
+                  className={`flex items-start gap-3 px-4 py-3 border-b border-border hover:bg-muted/40 transition ${notification.isRead ? '' : 'bg-blue/10'}`}
                 >
                   <div className="mt-1">{icon}</div>
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900 text-sm">{notification.title}</span>
-                      <span className="text-xs text-gray-400 ml-2">{formatDate(notification.createdAt)}</span>
+                      <span className="font-medium text-foreground text-sm font-inter">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground ml-2 font-inter">{formatDate(notification.createdAt)}</span>
                     </div>
-                    <div className="text-gray-700 text-sm mb-1">{notification.message}</div>
+                    <div className="text-muted-foreground text-sm mb-1 font-inter">{notification.message}</div>
                     {details && (
-                      <div className="text-xs text-gray-500 mb-1">{details}</div>
+                      <div className="text-xs text-muted-foreground mb-1 font-inter">{details}</div>
                     )}
                     <div className="flex items-center gap-2 mt-1">
                       {!notification.isRead && (
@@ -188,7 +191,7 @@ export default function NotificationModal({ open, onClose }: { open: boolean; on
                                   ? `/questions/${extractId(notification.relatedAnswer)}`
                                   : '#')
                           }
-                          className="text-blue-600 hover:underline text-xs"
+                          className="text-blue hover:underline text-xs font-inter"
                           onClick={onClose}
                         >
                           View

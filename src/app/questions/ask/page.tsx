@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
@@ -26,6 +26,9 @@ export default function AskQuestionPage() {
   const [contentError, setContentError] = useState('');
   const [tagsError, setTagsError] = useState('');
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<{ _id: string; title: string; createdAt: string }[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Common tags for suggestions
   const commonTags = [
@@ -42,6 +45,32 @@ export default function AskQuestionPage() {
     );
     setSuggestedTags(relevant.slice(0, 5));
   }, [title, content, tags]);
+
+  useEffect(() => {
+    if (!title.trim() && !content.trim()) {
+      setSuggestedQuestions([]);
+      return;
+    }
+    setLoadingSuggestions(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ title, content });
+        const res = await fetch(`/api/questions/similar?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestedQuestions(data.questions || []);
+        } else {
+          setSuggestedQuestions([]);
+        }
+      } catch {
+        setSuggestedQuestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, content]);
 
   // Redirect if not authenticated
   if (status === 'loading') {
@@ -206,26 +235,58 @@ export default function AskQuestionPage() {
   const titleCount = getCharacterCount(title);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
       <Navigation />
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+            <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Ask a Question</h1>
-          <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-foreground font-inter">Ask a Question</h1>
+            <p className="text-muted-foreground mt-2 font-inter">
             Share your knowledge and help others in the community
           </p>
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-md">
+              <Link href="/questions" className="w-full sm:w-auto">
+                <Button type="button" variant="outline" className="w-full">
+                  Cancel
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !title.trim() || !content.trim() || tags.length === 0}
+                className="bg-blue hover:bg-blue-light w-full"
+                form="ask-question-form"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  'Post Question'
+                )}
+              </Button>
+            </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form Card */}
+          <form id="ask-question-form" onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-card rounded-2xl shadow-md border border-border p-6 space-y-6 font-inter">
           {/* Title */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2 font-inter">
               Title *
             </label>
             <Input
@@ -236,14 +297,11 @@ export default function AskQuestionPage() {
                 setTitle(e.target.value);
                 if (titleError) setTitleError('');
               }}
-              placeholder="What&apos;s your question? Be specific."
+                  placeholder="What's your question? Be specific."
               className={`text-lg ${titleError ? 'border-red-500' : ''}`}
               maxLength={300}
             />
             <div className="flex justify-between items-center mt-1">
-              {/* <p className={`text-sm ${titleCount.color}`}>
-                {titleCount.count}/300 characters
-              </p> */}
               {titleError && (
                 <p className="text-sm text-red-500 flex items-center">
                   <AlertCircle className="h-4 w-4 mr-1" />
@@ -253,9 +311,28 @@ export default function AskQuestionPage() {
             </div>
           </div>
 
+          {(title.trim() || content.trim()) && (
+            <div className="mt-2">
+              {loadingSuggestions ? (
+                <div className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Checking for similar questions...</div>
+              ) : suggestedQuestions.length > 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-2">
+                  <div className="text-sm font-medium text-yellow-800 mb-2">Possible duplicates or similar questions:</div>
+                  <ul className="space-y-1">
+                    {suggestedQuestions.map(q => (
+                      <li key={q._id}>
+                        <Link href={`/questions/${q._id}`} className="text-blue-700 hover:underline">{q.title}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Content */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2 font-inter">
               Details *
             </label>
             <RichTextEditor
@@ -275,8 +352,8 @@ export default function AskQuestionPage() {
           </div>
 
           {/* Tags */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2 font-inter">
               Tags * (up to 5)
             </label>
             <div className="flex gap-2 mb-3">
@@ -297,19 +374,18 @@ export default function AskQuestionPage() {
                 <Tag className="h-4 w-4" />
               </Button>
             </div>
-            
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full flex items-center gap-1"
+                        className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full flex items-center gap-1 font-inter"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="text-blue-600 hover:text-blue-800"
+                          className="text-blue hover:text-blue-dark"
                     >
                       ×
                     </button>
@@ -317,11 +393,10 @@ export default function AskQuestionPage() {
                 ))}
               </div>
             )}
-
             {/* Suggested Tags */}
             {suggestedTags.length > 0 && (
               <div className="mb-3">
-                <p className="text-sm text-gray-600 mb-2">Suggested tags:</p>
+                    <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
                 <div className="flex flex-wrap gap-2">
                   {suggestedTags.map((tag) => (
                     <button
@@ -329,7 +404,7 @@ export default function AskQuestionPage() {
                       type="button"
                       onClick={() => handleSuggestedTagClick(tag)}
                       disabled={tags.includes(tag) || tags.length >= 5}
-                      className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-muted text-foreground text-sm px-3 py-1 rounded-full hover:bg-muted-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed font-inter"
                     >
                       {tag}
                     </button>
@@ -337,8 +412,7 @@ export default function AskQuestionPage() {
                 </div>
               </div>
             )}
-            
-            <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
               Tags help categorize your question and make it easier to find
             </p>
             {tagsError && (
@@ -350,13 +424,13 @@ export default function AskQuestionPage() {
           </div>
 
           {/* Anonymous Option */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-foreground font-inter">
                   Post Anonymously
                 </label>
-                <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                   Your question will be posted without showing your name
                 </p>
               </div>
@@ -364,7 +438,7 @@ export default function AskQuestionPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsAnonymous(!isAnonymous)}
-                className={isAnonymous ? 'bg-blue-50 border-blue-200' : ''}
+                    className={isAnonymous ? 'bg-blue/10 border-blue' : ''}
               >
                 {isAnonymous ? (
                   <>
@@ -380,38 +454,16 @@ export default function AskQuestionPage() {
               </Button>
             </div>
           </div>
-
-          {/* Submit */}
-          <div className="flex justify-end gap-4">
-            <Link href="/questions">
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </Link>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !title.trim() || !content.trim() || tags.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                'Post Question'
-              )}
-            </Button>
           </div>
         </form>
 
-        {/* Guidelines */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+          {/* Guidelines Card */}
+          <div className="bg-card border border-border rounded-2xl p-6 mt-8 font-inter">
+            <h3 className="text-lg font-semibold text-blue mb-3 flex items-center">
             <CheckCircle className="h-5 w-5 mr-2" />
             Writing a Good Question
           </h3>
-          <ul className="space-y-2 text-sm text-blue-800">
+            <ul className="space-y-2 text-sm text-foreground">
             <li>• Be specific and provide enough context</li>
             <li>• Include relevant code examples if applicable</li>
             <li>• Explain what you've already tried</li>
@@ -419,6 +471,7 @@ export default function AskQuestionPage() {
             <li>• Add appropriate tags to help others find your question</li>
             <li>• Check for similar questions before posting</li>
           </ul>
+          </div>
         </div>
       </div>
     </div>

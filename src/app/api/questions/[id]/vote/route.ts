@@ -53,11 +53,18 @@ export async function POST(
       );
     }
 
+    const author = await User.findById(question.author);
+    if (!author) {
+      return NextResponse.json({ message: 'Question author not found' }, { status: 404 });
+    }
+
     const userId = user._id.toString();
     const upvotes = question.votes.upvotes.map((id: mongoose.Types.ObjectId) => id.toString());
     const downvotes = question.votes.downvotes.map((id: mongoose.Types.ObjectId) => id.toString());
 
     let updatedQuestion;
+    let repChange = 0;
+    let repReason = '';
 
     if (voteType === 'upvote') {
       if (upvotes.includes(userId)) {
@@ -69,6 +76,8 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = -10;
+        repReason = 'Question upvote removed';
       } else {
         // Add upvote, remove downvote if exists
         updatedQuestion = await Question.findByIdAndUpdate(
@@ -79,6 +88,13 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = 10;
+        repReason = 'Question upvoted';
+        // If user had previously downvoted, revert that penalty
+        if (downvotes.includes(userId)) {
+          repChange += 2;
+          repReason = 'Question downvote removed and upvoted';
+        }
       }
     } else {
       if (downvotes.includes(userId)) {
@@ -90,6 +106,8 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = 2;
+        repReason = 'Question downvote removed';
       } else {
         // Add downvote, remove upvote if exists
         updatedQuestion = await Question.findByIdAndUpdate(
@@ -100,7 +118,27 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = -2;
+        repReason = 'Question downvoted';
+        // If user had previously upvoted, revert that bonus
+        if (upvotes.includes(userId)) {
+          repChange -= 10;
+          repReason = 'Question upvote removed and downvoted';
+        }
       }
+    }
+
+    // Update author's reputation and history
+    if (repChange !== 0) {
+      author.reputation += repChange;
+      author.reputationHistory = author.reputationHistory || [];
+      author.reputationHistory.push({
+        change: repChange,
+        reason: repReason,
+        relatedQuestion: question._id,
+        createdAt: new Date(),
+      });
+      await author.save();
     }
 
     // Create notification for question author if the voter is not the author

@@ -53,11 +53,18 @@ export async function POST(
       );
     }
 
+    const author = await User.findById(answer.author);
+    if (!author) {
+      return NextResponse.json({ message: 'Answer author not found' }, { status: 404 });
+    }
+
     const userId = user._id.toString();
     const upvotes = answer.votes.upvotes.map((id: mongoose.Types.ObjectId) => id.toString());
     const downvotes = answer.votes.downvotes.map((id: mongoose.Types.ObjectId) => id.toString());
 
     let updatedAnswer;
+    let repChange = 0;
+    let repReason = '';
 
     if (voteType === 'upvote') {
       if (upvotes.includes(userId)) {
@@ -69,6 +76,8 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = -10;
+        repReason = 'Answer upvote removed';
       } else {
         // Add upvote, remove downvote if exists
         updatedAnswer = await Answer.findByIdAndUpdate(
@@ -79,6 +88,13 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = 10;
+        repReason = 'Answer upvoted';
+        // If user had previously downvoted, revert that penalty
+        if (downvotes.includes(userId)) {
+          repChange += 2;
+          repReason = 'Answer downvote removed and upvoted';
+        }
       }
     } else {
       if (downvotes.includes(userId)) {
@@ -90,6 +106,8 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = 2;
+        repReason = 'Answer downvote removed';
       } else {
         // Add downvote, remove upvote if exists
         updatedAnswer = await Answer.findByIdAndUpdate(
@@ -100,7 +118,28 @@ export async function POST(
           },
           { new: true }
         ).populate('author', 'name email image');
+        repChange = -2;
+        repReason = 'Answer downvoted';
+        // If user had previously upvoted, revert that bonus
+        if (upvotes.includes(userId)) {
+          repChange -= 10;
+          repReason = 'Answer upvote removed and downvoted';
+        }
       }
+    }
+
+    // Update author's reputation and history
+    if (repChange !== 0) {
+      author.reputation += repChange;
+      author.reputationHistory = author.reputationHistory || [];
+      author.reputationHistory.push({
+        change: repChange,
+        reason: repReason,
+        relatedAnswer: answer._id,
+        relatedQuestion: answer.question,
+        createdAt: new Date(),
+      });
+      await author.save();
     }
 
     // Create notification for answer author if the voter is not the author

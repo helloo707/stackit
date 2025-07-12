@@ -209,10 +209,12 @@ export default function AdminDashboard() {
               View platform analytics and insights.
             </p>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" disabled>
-                <Eye className="h-4 w-4 mr-2" />
-                Platform Analytics
-              </Button>
+              <Link href="/admin/analytics">
+                <Button variant="outline" className="w-full justify-start">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Platform Analytics
+                </Button>
+              </Link>
             </div>
           </div>
 

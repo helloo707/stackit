@@ -9,23 +9,26 @@ export async function generateELI5(content: string): Promise<string> {
     // Check if API key is available
     if (!process.env.GEMINI_API_KEY) {
       console.error('GEMINI_API_KEY is not set');
-      return 'ELI5 generation is not configured. Please set up the Gemini API key.';
+      return 'Simplified answer generation is not configured. Please set up the Gemini API key.';
     }
 
     const model = 'gemini-2.0-flash';
     const prompt = `
-      Please explain the following technical content in simple terms that a 5-year-old could understand (ELI5 - Explain Like I'm 5).
-      
+      Please read the following technical content and rewrite it as a clear, simple explanation that anyone can understand, regardless of their background or age.
+
+      Guidelines:
+      - Use plain, everyday language.
+      - Break down complex ideas into easy steps.
+      - Use analogies, metaphors, or real-life examples where helpful.
+      - Avoid technical jargon or advanced vocabulary.
+      - Keep sentences short and direct.
+      - If the content is about a process, explain it step by step.
+      - If possible, add a friendly summary at the end.
+
+      IMPORTANT: Only return the answer as plain text. Do NOT include any HTML, formatting tags, or extra instructions. The output should be pure, readable text only.
+
       Technical content:
       ${content}
-      
-      Please provide a clear, simple explanation using:
-      - Simple language
-      - Analogies and examples
-      - Short sentences
-      - No technical jargon
-      
-      Format the response in HTML with proper paragraphs and formatting.
     `;
 
     const contents = [
@@ -68,12 +71,12 @@ export async function generateELI5(content: string): Promise<string> {
 
     if (!text || !text.trim()) {
       console.error('No text in Gemini response', response);
-      return 'Unable to generate ELI5 explanation.';
+      return 'Unable to generate a simplified answer.';
     }
 
     return text;
   } catch (error) {
-    console.error('Error generating ELI5:', error);
+    console.error('Error generating simplified answer:', error);
 
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
@@ -85,7 +88,7 @@ export async function generateELI5(content: string): Promise<string> {
       }
     }
 
-    return 'Unable to generate ELI5 explanation.';
+    return 'Unable to generate a simplified answer.';
   }
 }
 
