@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
@@ -106,21 +107,21 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-opacity-80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">S</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">StackIt</span>
+            <span className="text-xl font-bold text-foreground">StackIt</span>
           </Link>
 
           {/* Desktop Search */}
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-8 hidden md:block">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 ref={searchRef}
                 type="text"
@@ -128,7 +129,7 @@ export default function Navigation() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyPress}
-                className="pl-10 pr-4 py-2"
+               className="pl-10 pr-4 py-2 bg-background border-border focus:border-ring focus:ring-ring"
               />
               {searchQuery && (
                 <button
@@ -148,7 +149,7 @@ export default function Navigation() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className={isActive('/questions') ? 'bg-blue-50 text-blue-700' : ''}
+                className={isActive('/questions') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
               >
                 Questions
               </Button>
@@ -158,16 +159,19 @@ export default function Navigation() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className={isActive('/tags') ? 'bg-blue-50 text-blue-700' : ''}
+                className={isActive('/tags') ? 'text-muted-foreground hover:text-foreground hover:bg-accent : ''}
               >
                 Tags
               </Button>
             </Link>
 
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {session?.user && (
               <>
                 <Link href="/questions/ask">
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Plus className="h-4 w-4 mr-1" />
                     Ask Question
                   </Button>
@@ -177,7 +181,7 @@ export default function Navigation() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    className={isActive('/bookmarks') ? 'bg-blue-50 text-blue-700' : ''}
+                    className={isActive('/bookmarks') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
                   >
                     <Bookmark className="h-4 w-4" />
                   </Button>
@@ -234,7 +238,7 @@ export default function Navigation() {
                         </Button>
                       </Link>
                       <Link href="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-popover-foreground hover:bg-accent">
                           <User className="h-4 w-4 mr-2" />
                           Profile
                         </Button>
@@ -290,7 +294,7 @@ export default function Navigation() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="w-full justify-start text-red-600 hover:text-red-700"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => signOut()}
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -303,7 +307,7 @@ export default function Navigation() {
             )}
 
             {!session && (
-              <Button onClick={() => signIn()} size="sm">
+              <Button onClick={() => signIn()} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <LogIn className="h-4 w-4 mr-1" />
                 Sign In
               </Button>
