@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
-import Answer from '@/models/Answer';
+import Question from '@/models/Question';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 import Notification from '@/models/Notification';
@@ -36,33 +36,33 @@ export async function POST(
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    // Check if answer exists
-    const answer = await Answer.findById(id);
-    if (!answer) {
+    // Check if question exists
+    const question = await Question.findById(id);
+    if (!question) {
       return NextResponse.json(
-        { message: 'Answer not found' },
+        { message: 'Question not found' },
         { status: 404 }
       );
     }
 
-    // Check if user is voting on their own answer
-    if (answer.author.toString() === user._id.toString()) {
+    // Check if user is voting on their own question
+    if (question.author.toString() === user._id.toString()) {
       return NextResponse.json(
-        { message: 'You cannot vote on your own answer' },
+        { message: 'You cannot vote on your own question' },
         { status: 400 }
       );
     }
 
     const userId = user._id.toString();
-    const upvotes = answer.votes.upvotes.map((id: mongoose.Types.ObjectId) => id.toString());
-    const downvotes = answer.votes.downvotes.map((id: mongoose.Types.ObjectId) => id.toString());
+    const upvotes = question.votes.upvotes.map((id: mongoose.Types.ObjectId) => id.toString());
+    const downvotes = question.votes.downvotes.map((id: mongoose.Types.ObjectId) => id.toString());
 
-    let updatedAnswer;
+    let updatedQuestion;
 
     if (voteType === 'upvote') {
       if (upvotes.includes(userId)) {
         // Remove upvote
-        updatedAnswer = await Answer.findByIdAndUpdate(
+        updatedQuestion = await Question.findByIdAndUpdate(
           id,
           {
             $pull: { 'votes.upvotes': user._id }
@@ -71,7 +71,7 @@ export async function POST(
         ).populate('author', 'name email image');
       } else {
         // Add upvote, remove downvote if exists
-        updatedAnswer = await Answer.findByIdAndUpdate(
+        updatedQuestion = await Question.findByIdAndUpdate(
           id,
           {
             $addToSet: { 'votes.upvotes': user._id },
@@ -83,7 +83,7 @@ export async function POST(
     } else {
       if (downvotes.includes(userId)) {
         // Remove downvote
-        updatedAnswer = await Answer.findByIdAndUpdate(
+        updatedQuestion = await Question.findByIdAndUpdate(
           id,
           {
             $pull: { 'votes.downvotes': user._id }
@@ -92,7 +92,7 @@ export async function POST(
         ).populate('author', 'name email image');
       } else {
         // Add downvote, remove upvote if exists
-        updatedAnswer = await Answer.findByIdAndUpdate(
+        updatedQuestion = await Question.findByIdAndUpdate(
           id,
           {
             $addToSet: { 'votes.downvotes': user._id },
@@ -103,46 +103,42 @@ export async function POST(
       }
     }
 
-    // Create notification for answer author if the voter is not the author
-    if (answer.author.toString() !== user._id.toString()) {
+    // Create notification for question author if the voter is not the author
+    if (question.author.toString() !== user._id.toString()) {
       try {
         // Create notification using Notification model
         await Notification.create({
-          recipient: answer.author,
+          recipient: question.author,
           sender: user._id,
           type: 'vote',
-          title: 'Answer Voted',
-          message: `${user.name} ${voteType}d your answer on "${answer.question.title}"`,
-          relatedQuestion: answer.question,
-          relatedAnswer: answer._id,
+          title: 'Question Voted',
+          message: `${user.name} ${voteType}d your question: "${question.title}"`,
+          relatedQuestion: question._id,
           isRead: false,
           metadata: {
-            questionTitle: answer.question.title,
-            answerSnippet: answer.content.length > 100 
-              ? answer.content.substring(0, 100) + '...' 
-              : answer.content,
+            questionTitle: question.title,
             senderName: user.name,
             senderImage: user.image,
             actionDetails: {
               who: user.name,
-              what: `${voteType}d an answer`,
-              where: answer.question.title
+              what: `${voteType}d a question`,
+              where: question.title
             }
           },
         });
 
-        console.log('Answer vote notification created successfully');
+        console.log('Question vote notification created successfully');
       } catch (notificationError) {
-        console.error('Failed to create answer vote notification:', notificationError);
+        console.error('Failed to create question vote notification:', notificationError);
       }
     }
 
     return NextResponse.json({
       message: 'Vote processed successfully',
-      answer: updatedAnswer,
+      question: updatedQuestion,
     });
   } catch (error) {
-    console.error('Error voting on answer:', error);
+    console.error('Error voting on question:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
