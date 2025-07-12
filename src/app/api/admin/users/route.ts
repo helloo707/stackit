@@ -75,7 +75,6 @@ export async function GET(request: NextRequest) {
 
     // Execute query
     const users = await User.find(query)
-      .populate('bannedBy', 'name email')
       .select('-password')
       .sort(sortObject)
       .skip(skip)
@@ -85,8 +84,32 @@ export async function GET(request: NextRequest) {
     // Get total count
     const total = await User.countDocuments(query);
 
+    // If we need bannedBy information, fetch it separately for users who are banned
+    const usersWithBanInfo = await Promise.all(
+      users.map(async (user) => {
+        if (user.isBanned && user.bannedBy) {
+          try {
+            const bannedByUser = await User.findById(user.bannedBy)
+              .select('name email')
+              .lean();
+            return {
+              ...user,
+              bannedBy: bannedByUser || null
+            };
+          } catch (error) {
+            console.error('Error fetching bannedBy user:', error);
+            return {
+              ...user,
+              bannedBy: null
+            };
+          }
+        }
+        return user;
+      })
+    );
+
     return NextResponse.json({
-      users,
+      users: usersWithBanInfo,
       pagination: {
         page,
         limit,

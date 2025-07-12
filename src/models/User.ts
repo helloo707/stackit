@@ -38,7 +38,8 @@ const UserSchema = new Schema<IUser>({
   email: { 
     type: String, 
     required: true, 
-    unique: true 
+    unique: true,
+    index: true
   },
   password: { type: String },
   role: { 
@@ -71,6 +72,7 @@ const UserSchema = new Schema<IUser>({
   bannedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
+    required: false,
   },
   notifications: [{
     type: {
@@ -114,10 +116,10 @@ const UserSchema = new Schema<IUser>({
   ]
 }, {
   timestamps: true,
+  strictPopulate: false, // Allow populate on fields not explicitly defined
 });
 
-// Index for performance
-UserSchema.index({ email: 1 });
+// Only create index for notifications
 UserSchema.index({ 'notifications.createdAt': -1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 

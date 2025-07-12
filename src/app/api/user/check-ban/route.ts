@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     
     const user = await User.findOne({ email: session.user.email })
       .select('isBanned bannedAt banReason bannedBy')
-      .populate('bannedBy', 'name email')
       .lean();
 
     if (!user) {
@@ -26,11 +25,24 @@ export async function GET(request: NextRequest) {
     // Type assertion to handle MongoDB return type
     const userDoc = user as any;
 
+    // If user is banned and has bannedBy info, fetch the admin details
+    let bannedByInfo = null;
+    if (userDoc.isBanned && userDoc.bannedBy) {
+      try {
+        const bannedByUser = await User.findById(userDoc.bannedBy)
+          .select('name email')
+          .lean();
+        bannedByInfo = bannedByUser;
+      } catch (error) {
+        console.error('Error fetching bannedBy user:', error);
+      }
+    }
+
     return NextResponse.json({
       isBanned: userDoc.isBanned || false,
       bannedAt: userDoc.bannedAt,
       banReason: userDoc.banReason,
-      bannedBy: userDoc.bannedBy,
+      bannedBy: bannedByInfo,
     });
   } catch (error) {
     console.error('Error checking user ban status:', error);
