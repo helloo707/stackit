@@ -15,7 +15,9 @@ import {
   Check, 
   User,
   Calendar,
-  Tag
+  Tag,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -71,10 +73,17 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [voting, setVoting] = useState<string | null>(null);
   const [acceptingAnswer, setAcceptingAnswer] = useState<string | null>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     fetchQuestion();
   }, [params.id]);
+
+  useEffect(() => {
+    if (questionData?.question._id && session) {
+      checkBookmarkStatus();
+    }
+  }, [questionData?.question._id, session]);
 
   const fetchQuestion = async () => {
     try {
@@ -91,6 +100,62 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
       toast.error('Failed to load question');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkBookmarkStatus = async () => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch(`/api/bookmarks/check/${params.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsBookmarked(data.isBookmarked);
+      }
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (!session) {
+      toast.error('Please sign in to bookmark questions');
+      return;
+    }
+
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await fetch(`/api/bookmarks/${params.id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setIsBookmarked(false);
+          toast.success('Bookmark removed');
+        } else {
+          toast.error('Failed to remove bookmark');
+        }
+      } else {
+        // Add bookmark
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ questionId: params.id }),
+        });
+
+        if (response.ok) {
+          setIsBookmarked(true);
+          toast.success('Question bookmarked');
+        } else {
+          const error = await response.json();
+          toast.error(error.message || 'Failed to bookmark question');
+        }
+      }
+    } catch (error) {
+      toast.error('An error occurred');
     }
   };
 
@@ -206,13 +271,18 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
   };
 
   const hasUserVoted = (votes: { upvotes: string[]; downvotes: string[] }, voteType: 'upvote' | 'downvote') => {
-    if (!session?.user?.email) return false;
-    const userVotes = voteType === 'upvote' ? votes.upvotes : votes.downvotes;
-    return userVotes.includes(session.user.email);
+    if (!session?.user?.id) return false;
+    return voteType === 'upvote' 
+      ? votes.upvotes.includes(session.user.id)
+      : votes.downvotes.includes(session.user.id);
   };
 
   const isQuestionAuthor = () => {
     return session?.user?.email === questionData?.question.author.email;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   if (loading) {
@@ -220,10 +290,7 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading question...</p>
-          </div>
+          <div className="text-center">Loading question...</div>
         </div>
       </div>
     );
@@ -234,9 +301,7 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-600">Question not found</p>
-          </div>
+          <div className="text-center">Question not found</div>
         </div>
       </div>
     );
@@ -255,155 +320,169 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Questions
           </Link>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">{question.title}</h1>
+          
+          {/* Meta */}
+          <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>Asked by {question.author.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>{formatDate(question.createdAt)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>{question.views} views</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleBookmark}
+                className="flex items-center gap-2"
+              >
+                {isBookmarked ? (
+                  <>
+                    <BookmarkCheck className="h-4 w-4 text-blue-600" />
+                    Bookmarked
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="h-4 w-4" />
+                    Bookmark
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Question */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex gap-4">
-            {/* Voting */}
+            {/* Vote buttons */}
             <div className="flex flex-col items-center">
-              <Button
-                variant="ghost"
-                size="sm"
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue-600' : ''}`}
                 onClick={() => handleVote('question', question._id, 'upvote')}
                 disabled={voting === question._id}
-                className={`${hasUserVoted(question.votes, 'upvote') ? 'text-blue-600' : 'text-gray-400'} hover:text-blue-600`}
               >
                 <ThumbsUp className="h-5 w-5" />
               </Button>
-              <span className="text-lg font-semibold text-gray-900 my-1">
+              <div className="text-lg font-semibold text-gray-900 my-2">
                 {getVoteCount(question.votes)}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`p-1 ${hasUserVoted(question.votes, 'downvote') ? 'text-red-600' : ''}`}
                 onClick={() => handleVote('question', question._id, 'downvote')}
                 disabled={voting === question._id}
-                className={`${hasUserVoted(question.votes, 'downvote') ? 'text-red-600' : 'text-gray-400'} hover:text-red-600`}
               >
                 <ThumbsDown className="h-5 w-5" />
               </Button>
             </div>
 
-            {/* Content */}
+            {/* Question content */}
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">{question.title}</h1>
-              
-              <div className="prose max-w-none mb-6" dangerouslySetInnerHTML={{ __html: question.content }} />
+              <div 
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: question.content }}
+              />
               
               {/* Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mt-6">
                 {question.tags.map((tag) => (
-                  <span key={tag} className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full flex items-center gap-1">
-                    <Tag className="h-3 w-3" />
-                    {tag}
-                  </span>
+                  <Link key={tag} href={`/tags/${tag}`}>
+                    <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 cursor-pointer flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </span>
+                  </Link>
                 ))}
-              </div>
-              
-              {/* Meta */}
-              <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span>{question.author.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(question.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span>{question.views} views</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Answers Section */}
+        {/* Answers */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {answers.length} Answer{answers.length !== 1 ? 's' : ''}
-          </h2>
-          
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {answers.length} Answer{answers.length !== 1 ? 's' : ''}
+            </h2>
+          </div>
+
           {answers.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No answers yet. Be the first to answer!</p>
+              <p className="text-gray-600 mb-4">No answers yet. Be the first to answer this question!</p>
             </div>
           ) : (
             <div className="space-y-6">
               {answers.map((answer) => (
-                <div key={answer._id} className={`bg-white rounded-lg border p-6 ${answer.isAccepted ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+                <div key={answer._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex gap-4">
-                    {/* Voting */}
+                    {/* Vote buttons */}
                     <div className="flex flex-col items-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue-600' : ''}`}
                         onClick={() => handleVote('answer', answer._id, 'upvote')}
                         disabled={voting === answer._id}
-                        className={`${hasUserVoted(answer.votes, 'upvote') ? 'text-blue-600' : 'text-gray-400'} hover:text-blue-600`}
                       >
                         <ThumbsUp className="h-5 w-5" />
                       </Button>
-                      <span className="text-lg font-semibold text-gray-900 my-1">
+                      <div className="text-lg font-semibold text-gray-900 my-2">
                         {getVoteCount(answer.votes)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`p-1 ${hasUserVoted(answer.votes, 'downvote') ? 'text-red-600' : ''}`}
                         onClick={() => handleVote('answer', answer._id, 'downvote')}
                         disabled={voting === answer._id}
-                        className={`${hasUserVoted(answer.votes, 'downvote') ? 'text-red-600' : 'text-gray-400'} hover:text-red-600`}
                       >
                         <ThumbsDown className="h-5 w-5" />
                       </Button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1">
                       {answer.isAccepted && (
-                        <div className="flex items-center gap-2 mb-3">
-                          <Check className="h-5 w-5 text-green-600" />
-                          <span className="text-green-600 font-medium">Accepted Answer</span>
+                        <div className="mt-2">
+                          <Check className="h-6 w-6 text-green-600" />
                         </div>
                       )}
+                    </div>
+
+                    {/* Answer content */}
+                    <div className="flex-1">
+                      <div 
+                        className="prose max-w-none"
+                        dangerouslySetInnerHTML={{ __html: answer.content }}
+                      />
                       
-                      <div className="prose max-w-none mb-4" dangerouslySetInnerHTML={{ __html: answer.content }} />
-                      
-                      {/* Meta */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            <span>{answer.author.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{new Date(answer.createdAt).toLocaleDateString()}</span>
-                          </div>
+                      {/* Answer meta */}
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <User className="h-4 w-4" />
+                          <span>Answered by {answer.author.name}</span>
+                          <span>•</span>
+                          <span>{formatDate(answer.createdAt)}</span>
                         </div>
-                        
-                        {/* Accept Answer Button */}
-                        {isQuestionAuthor() && !answer.isAccepted && (
-                          <Button
-                            variant="outline"
+                        {!answer.isAccepted && isQuestionAuthor() && (
+                          <Button 
+                            variant="outline" 
                             size="sm"
                             onClick={() => handleAcceptAnswer(answer._id)}
                             disabled={acceptingAnswer === answer._id}
-                            className="text-green-600 border-green-600 hover:bg-green-50"
                           >
-                            {acceptingAnswer === answer._id ? (
-                              'Accepting...'
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-1" />
-                                Accept Answer
-                              </>
-                            )}
+                            <Check className="h-4 w-4 mr-2" />
+                            Accept Answer
                           </Button>
                         )}
                       </div>
@@ -438,10 +517,10 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
           </div>
         ) : (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-            <p className="text-blue-800 mb-2">Want to answer this question?</p>
+            <p className="text-blue-800 mb-4">Please sign in to answer this question</p>
             <Link href="/auth/signin">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Sign in to Answer
+                Sign In to Answer
               </Button>
             </Link>
           </div>

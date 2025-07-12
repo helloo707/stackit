@@ -11,10 +11,13 @@ import {
   Clock, 
   MessageSquare,
   Eye,
-  Loader2
+  Loader2,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 
 interface Question {
   _id: string;
@@ -48,6 +51,7 @@ interface QuestionsResponse {
 }
 
 export default function QuestionsPage() {
+  const { data: session } = useSession();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +59,7 @@ export default function QuestionsPage() {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
+  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<string>>(new Set());
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -89,9 +94,92 @@ export default function QuestionsPage() {
     }
   };
 
+  const checkBookmarkStatus = async (questionId: string) => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch(`/api/bookmarks/check/${questionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setBookmarkedQuestions(prev => {
+          const newSet = new Set(prev);
+          if (data.isBookmarked) {
+            newSet.add(questionId);
+          } else {
+            newSet.delete(questionId);
+          }
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+    }
+  };
+
+  const toggleBookmark = async (questionId: string) => {
+    if (!session) {
+      toast.error('Please sign in to bookmark questions');
+      return;
+    }
+
+    const isBookmarked = bookmarkedQuestions.has(questionId);
+
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await fetch(`/api/bookmarks/${questionId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setBookmarkedQuestions(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(questionId);
+            return newSet;
+          });
+          toast.success('Bookmark removed');
+        } else {
+          toast.error('Failed to remove bookmark');
+        }
+      } else {
+        // Add bookmark
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ questionId }),
+        });
+
+        if (response.ok) {
+          setBookmarkedQuestions(prev => {
+            const newSet = new Set(prev);
+            newSet.add(questionId);
+            return newSet;
+          });
+          toast.success('Question bookmarked');
+        } else {
+          const error = await response.json();
+          toast.error(error.message || 'Failed to bookmark question');
+        }
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
+
   useEffect(() => {
     fetchQuestions();
   }, [currentPage, sort, filter, search]);
+
+  useEffect(() => {
+    // Check bookmark status for all questions when they load
+    if (questions.length > 0 && session) {
+      questions.forEach(question => {
+        checkBookmarkStatus(question._id);
+      });
+    }
+  }, [questions, session]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,11 +221,21 @@ export default function QuestionsPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Questions</h1>
             <p className="text-gray-600">Find answers to your questions or help others</p>
           </div>
-          <Link href="/questions/ask">
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Ask Question
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {session && (
+              <Link href="/bookmarks">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <BookmarkCheck className="h-4 w-4" />
+                  My Bookmarks
+                </Button>
+              </Link>
+            )}
+            <Link href="/questions/ask">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Ask Question
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filters and Search */}
@@ -238,11 +336,25 @@ export default function QuestionsPage() {
                           {question.title}
                         </h3>
                       </Link>
-                      {getAnswerCount(question) > 0 && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                          Answered
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {getAnswerCount(question) > 0 && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                            Answered
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleBookmark(question._id)}
+                          className="p-1"
+                        >
+                          {bookmarkedQuestions.has(question._id) ? (
+                            <BookmarkCheck className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     
                     <p className="text-gray-600 mb-3 line-clamp-2">
