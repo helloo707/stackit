@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,51 +10,98 @@ import {
   TrendingUp, 
   Clock, 
   MessageSquare,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
-// Mock data for demonstration
-const mockQuestions = [
-  {
-    id: '1',
-    title: 'How to implement authentication in Next.js with NextAuth?',
-    content: 'I\'m building a Next.js application and need to implement user authentication. I\'ve heard NextAuth is a good solution...',
-    author: 'John Doe',
-    tags: ['nextjs', 'authentication', 'nextauth'],
-    votes: 15,
-    answers: 3,
-    views: 245,
-    createdAt: '2024-01-15T10:30:00Z',
-    isAnswered: true,
-  },
-  {
-    id: '2',
-    title: 'Best practices for MongoDB schema design',
-    content: 'I\'m designing a database schema for a social media application. What are the best practices for MongoDB...',
-    author: 'Jane Smith',
-    tags: ['mongodb', 'database', 'schema-design'],
-    votes: 8,
-    answers: 1,
-    views: 156,
-    createdAt: '2024-01-14T15:45:00Z',
-    isAnswered: false,
-  },
-  {
-    id: '3',
-    title: 'Understanding React Server Components vs Client Components',
-    content: 'I\'m confused about the difference between Server Components and Client Components in React 18...',
-    author: 'Mike Johnson',
-    tags: ['react', 'server-components', 'nextjs'],
-    votes: 22,
-    answers: 5,
-    views: 389,
-    createdAt: '2024-01-13T09:20:00Z',
-    isAnswered: true,
-  },
-];
+interface Question {
+  _id: string;
+  title: string;
+  content: string;
+  author: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  tags: string[];
+  votes: {
+    upvotes: string[];
+    downvotes: string[];
+  };
+  answers: string[];
+  views: number;
+  createdAt: string;
+  acceptedAnswer?: string;
+}
+
+interface QuestionsResponse {
+  questions: Question[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
 
 export default function QuestionsPage() {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
+  });
+
+  useEffect(() => {
+    fetchQuestions();
+  }, [page, filter, sort, search]);
+
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        sort,
+        filter,
+        ...(search && { search }),
+      });
+
+      const response = await fetch(`/api/questions?${params}`);
+      if (response.ok) {
+        const data: QuestionsResponse = await response.json();
+        setQuestions(data.questions);
+        setPagination(data.pagination);
+      } else {
+        toast.error('Failed to fetch questions');
+      }
+    } catch {
+      toast.error('An error occurred while fetching questions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getVoteCount = (votes: { upvotes: string[]; downvotes: string[] }) => {
+    return votes.upvotes.length - votes.downvotes.length;
+  };
+
+  const getAnswerCount = (answers: string[]) => {
+    return answers.length;
+  };
+
+  const isAnswered = (question: Question) => {
+    return question.acceptedAnswer || question.answers.length > 0;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -81,25 +131,47 @@ export default function QuestionsPage() {
                   type="text"
                   placeholder="Search questions..."
                   className="pl-10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
 
             {/* Filter Buttons */}
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`flex items-center gap-2 ${filter === 'all' ? 'bg-blue-50 border-blue-200' : ''}`}
+                onClick={() => setFilter('all')}
+              >
                 <Filter className="h-4 w-4" />
                 All Questions
               </Button>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`flex items-center gap-2 ${sort === 'votes' ? 'bg-blue-50 border-blue-200' : ''}`}
+                onClick={() => setSort('votes')}
+              >
                 <TrendingUp className="h-4 w-4" />
                 Most Voted
               </Button>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`flex items-center gap-2 ${sort === 'newest' ? 'bg-blue-50 border-blue-200' : ''}`}
+                onClick={() => setSort('newest')}
+              >
                 <Clock className="h-4 w-4" />
                 Recent
               </Button>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`flex items-center gap-2 ${filter === 'unanswered' ? 'bg-blue-50 border-blue-200' : ''}`}
+                onClick={() => setFilter('unanswered')}
+              >
                 <MessageSquare className="h-4 w-4" />
                 Unanswered
               </Button>
@@ -108,91 +180,132 @@ export default function QuestionsPage() {
         </div>
 
         {/* Questions List */}
-        <div className="space-y-4">
-          {mockQuestions.map((question) => (
-            <div key={question.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex gap-4">
-                {/* Stats */}
-                <div className="flex flex-col items-center text-center min-w-[80px]">
-                  <div className="text-lg font-semibold text-gray-900">{question.votes}</div>
-                  <div className="text-sm text-gray-500">votes</div>
-                  <div className="text-lg font-semibold text-gray-900 mt-2">{question.answers}</div>
-                  <div className="text-sm text-gray-500">answers</div>
-                  <div className="text-sm text-gray-500 mt-2">{question.views}</div>
-                  <div className="text-xs text-gray-400">views</div>
-                </div>
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading questions...</span>
+          </div>
+        ) : questions.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No questions found</p>
+            <p className="text-gray-400">Try adjusting your search or filters</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {questions.map((question: Question) => (
+              <div key={question._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div className="flex gap-4">
+                  {/* Stats */}
+                  <div className="flex flex-col items-center text-center min-w-[80px]">
+                    <div className="text-lg font-semibold text-gray-900">{getVoteCount(question.votes)}</div>
+                    <div className="text-sm text-gray-500">votes</div>
+                    <div className="text-lg font-semibold text-gray-900 mt-2">{getAnswerCount(question.answers)}</div>
+                    <div className="text-sm text-gray-500">answers</div>
+                    <div className="text-sm text-gray-500 mt-2">{question.views}</div>
+                    <div className="text-xs text-gray-400">views</div>
+                  </div>
 
-                {/* Content */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <Link href={`/questions/${question.id}`}>
-                      <h3 className="text-lg font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">
-                        {question.title}
-                      </h3>
-                    </Link>
-                    {question.isAnswered && (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        Answered
-                      </span>
-                    )}
-                  </div>
-                  
-                  <p className="text-gray-600 mb-3 line-clamp-2">
-                    {question.content}
-                  </p>
-                  
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {question.tags.map((tag) => (
-                      <Link key={tag} href={`/tags/${tag}`}>
-                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200 cursor-pointer">
-                          {tag}
-                        </span>
+                  {/* Content */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <Link href={`/questions/${question._id}`}>
+                        <h3 className="text-lg font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">
+                          {question.title}
+                        </h3>
                       </Link>
-                    ))}
-                  </div>
-                  
-                  {/* Meta */}
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <span>Asked by {question.author}</span>
-                      <span>{new Date(question.createdAt).toLocaleDateString()}</span>
+                      {isAnswered(question) && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          Answered
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
-                      <span>{question.views}</span>
+                    
+                    <p className="text-gray-600 mb-3 line-clamp-2">
+                      {question.content}
+                    </p>
+                    
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {question.tags.map((tag: string) => (
+                        <Link key={tag} href={`/tags/${tag}`}>
+                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200 cursor-pointer">
+                            {tag}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                    
+                    {/* Meta */}
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-4">
+                        <span>Asked by {question.author.name}</span>
+                        <span>{new Date(question.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        <span>{question.views}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
-              1
-            </Button>
-            <Button variant="outline" size="sm">
-              2
-            </Button>
-            <Button variant="outline" size="sm">
-              3
-            </Button>
-            <span className="text-gray-500">...</span>
-            <Button variant="outline" size="sm">
-              10
-            </Button>
-            <Button variant="outline" size="sm">
-              Next
-            </Button>
+        {pagination.pages > 1 && (
+          <div className="flex justify-center mt-8">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
+              
+              {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant="outline"
+                    size="sm"
+                    className={page === pageNum ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+                    onClick={() => setPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              
+              {pagination.pages > 5 && (
+                <>
+                  <span className="text-gray-500">...</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={page === pagination.pages ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+                    onClick={() => setPage(pagination.pages)}
+                  >
+                    {pagination.pages}
+                  </Button>
+                </>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={page === pagination.pages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -2,33 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
+import Answer from '@/models/Answer';
 import Question from '@/models/Question';
 import User from '@/models/User';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    console.log(session);
+    
     if (!session?.user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     await dbConnect();
     
-    const { title, content, tags, isAnonymous } = await request.json();
+    const { questionId, content } = await request.json();
 
     // Validation
-    if (!title?.trim() || !content?.trim() || !tags?.length) {
+    if (!questionId || !content?.trim()) {
       return NextResponse.json(
-        { message: 'Title, content, and tags are required' },
+        { message: 'Question ID and content are required' },
         { status: 400 }
       );
     }
 
-    if (tags.length > 5) {
+    // Check if question exists
+    const question = await Question.findById(questionId);
+    if (!question) {
       return NextResponse.json(
-        { message: 'Maximum 5 tags allowed' },
-        { status: 400 }
+        { message: 'Question not found' },
+        { status: 404 }
       );
     }
 
@@ -38,29 +41,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    // Create question
-    const question = await Question.create({
-      title: title.trim(),
-      content,
+    // Create answer
+    const answer = await Answer.create({
+      content: content.trim(),
       author: user._id,
-      tags: tags.map((tag: string) => tag.toLowerCase().trim()),
-      isAnonymous: isAnonymous || false,
+      question: questionId,
       votes: {
         upvotes: [],
         downvotes: [],
       },
-      views: 0,
-      answers: [],
+      isAccepted: false,
       isDeleted: false,
     });
 
+    // Add answer to question's answers array
+    await Question.findByIdAndUpdate(questionId, {
+      $push: { answers: answer._id }
+    });
+
+    // Populate author info for response
+    const populatedAnswer = await Answer.findById(answer._id)
+      .populate('author', 'name email image')
+      .lean();
+
     return NextResponse.json({
-      id: question._id,
-      title: question.title,
-      message: 'Question created successfully',
+      id: answer._id,
+      content: answer.content,
+      author: populatedAnswer.author,
+      questionId: answer.question,
+      message: 'Answer created successfully',
     });
   } catch (error) {
-    console.error('Error creating question:', error);
+    console.error('Error creating answer:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -73,29 +85,25 @@ export async function GET(request: NextRequest) {
     await dbConnect();
     
     const { searchParams } = new URL(request.url);
+    const questionId = searchParams.get('questionId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const sort = searchParams.get('sort') || 'newest';
-    const filter = searchParams.get('filter') || 'all';
-    const search = searchParams.get('search') || '';
-    const tag = searchParams.get('tag') || '';
+
+    if (!questionId) {
+      return NextResponse.json(
+        { message: 'Question ID is required' },
+        { status: 400 }
+      );
+    }
 
     const skip = (page - 1) * limit;
 
     // Build query
-    const query: Record<string, unknown> = { isDeleted: false };
-
-    if (search) {
-      query.$text = { $search: search };
-    }
-
-    if (tag) {
-      query.tags = tag.toLowerCase();
-    }
-
-    if (filter === 'unanswered') {
-      query.answers = { $size: 0 };
-    }
+    const query = { 
+      question: questionId,
+      isDeleted: false 
+    };
 
     // Build sort
     let sortQuery: Record<string, 1 | -1> = {};
@@ -103,18 +111,18 @@ export async function GET(request: NextRequest) {
       case 'votes':
         sortQuery = { 'votes.upvotes': -1, createdAt: -1 };
         break;
-      case 'recent':
-        sortQuery = { createdAt: -1 };
+      case 'oldest':
+        sortQuery = { createdAt: 1 };
         break;
-      case 'views':
-        sortQuery = { views: -1, createdAt: -1 };
+      case 'accepted':
+        sortQuery = { isAccepted: -1, createdAt: -1 };
         break;
       default:
         sortQuery = { createdAt: -1 };
     }
 
     // Execute query
-    const questions = await Question.find(query)
+    const answers = await Answer.find(query)
       .populate('author', 'name email image')
       .sort(sortQuery)
       .skip(skip)
@@ -122,10 +130,10 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Get total count
-    const total = await Question.countDocuments(query);
+    const total = await Answer.countDocuments(query);
 
     return NextResponse.json({
-      questions,
+      answers,
       pagination: {
         page,
         limit,
@@ -134,7 +142,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching questions:', error);
+    console.error('Error fetching answers:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
