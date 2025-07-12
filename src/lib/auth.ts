@@ -30,6 +30,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Check if user is banned
+        if (user.isBanned) {
+          throw new Error('Your account has been banned. Please contact support for more information.');
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
         
         if (!isPasswordValid) {
@@ -57,7 +62,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as 'guest' | 'user' | 'admin';
       }
       return session;
     },
@@ -67,12 +72,17 @@ export const authOptions: NextAuthOptions = {
         
         const existingUser = await User.findOne({ email: user.email });
         
-        if (!existingUser) {
+        if (existingUser) {
+          // Check if existing user is banned
+          if (existingUser.isBanned) {
+            throw new Error('Your account has been banned. Please contact support for more information.');
+          }
+        } else {
           await User.create({
             email: user.email,
             name: user.name,
             image: user.image,
-            role: 'user',
+            role: 'user' as const,
           });
         }
       }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
+import BanCheck from "@/components/BanCheck";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -30,7 +31,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NextAuthProvider>
-            {children}
+            <BanCheck>
+              {children}
+            </BanCheck>
             <Toaster position="top-right" />
           </NextAuthProvider>
         </ThemeProvider>
