@@ -61,7 +61,7 @@ export default function Navigation() {
           const data = await response.json();
           setUnreadNotificationsCount(data.pagination?.total || 0);
         }
-      } catch (error) {
+      } catch {
         setUnreadNotificationsCount(0);
       }
     };
@@ -141,6 +141,16 @@ export default function Navigation() {
                 className={isActive('/tags') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
               >
                 Tags
+              </Button>
+            </Link>
+            <Link href="/leaderboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={isActive('/leaderboard') ? 'text-muted-foreground hover:text-foreground hover:bg-accent' : ''}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                Leaderboard
               </Button>
             </Link>
             <ThemeToggle />
@@ -330,6 +340,16 @@ export default function Navigation() {
                   className={`w-full justify-start ${isActive('/tags') ? 'bg-blue-50 text-blue-700' : ''}`}
                 >
                   Tags
+                </Button>
+              </Link>
+              <Link href="/leaderboard">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`w-full justify-start ${isActive('/leaderboard') ? 'bg-blue-50 text-blue-700' : ''}`}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Leaderboard
                 </Button>
               </Link>
               {session?.user ? (

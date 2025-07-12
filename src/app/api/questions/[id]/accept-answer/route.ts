@@ -73,6 +73,26 @@ export async function POST(
       { isAccepted: false }
     );
 
+    // If there was a previously accepted answer, revert its author's reputation
+    if (question.acceptedAnswer) {
+      const prevAccepted = await Answer.findById(question.acceptedAnswer);
+      if (prevAccepted) {
+        const prevAuthor = await User.findById(prevAccepted.author);
+        if (prevAuthor) {
+          prevAuthor.reputation -= 15;
+          prevAuthor.reputationHistory = prevAuthor.reputationHistory || [];
+          prevAuthor.reputationHistory.push({
+            change: -15,
+            reason: 'Accepted answer revoked',
+            relatedAnswer: prevAccepted._id,
+            relatedQuestion: question._id,
+            createdAt: new Date(),
+          });
+          await prevAuthor.save();
+        }
+      }
+    }
+
     // Accept the new answer
     const updatedAnswer = await Answer.findByIdAndUpdate(
       answerId,

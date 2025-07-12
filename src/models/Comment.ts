@@ -10,6 +10,7 @@ export interface IComment extends Document {
   createdAt: Date;
   updatedAt: Date;
   edited: boolean;
+  parent?: mongoose.Types.ObjectId | null;
 }
 
 const CommentSchema = new Schema<IComment>({
@@ -41,6 +42,11 @@ const CommentSchema = new Schema<IComment>({
   edited: {
     type: Boolean,
     default: false,
+  },
+  parent: {
+    type: Schema.Types.ObjectId,
+    ref: 'Comment',
+    default: null,
   },
 }, {
   timestamps: true,

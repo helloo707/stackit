@@ -18,7 +18,8 @@ import {
   Calendar,
   Tag,
   Bookmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Bell
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -50,6 +51,13 @@ interface Answer {
   createdAt: string;
 }
 
+interface Bounty {
+  amount: number;
+  status: 'open' | 'awarded' | 'cancelled';
+  awardedTo?: string;
+  awardedAt?: string;
+}
+
 interface Question {
   _id: string;
   title: string;
@@ -68,6 +76,7 @@ interface Question {
   answers: string[];
   acceptedAnswer?: string;
   createdAt: string;
+  bounty?: Bounty;
 }
 
 interface QuestionData {
@@ -75,7 +84,7 @@ interface QuestionData {
   answers: Answer[];
 }
 
-interface Comment {
+type Comment = {
   _id: string;
   answerId: string;
   author: {
@@ -86,7 +95,10 @@ interface Comment {
   content: string;
   createdAt: string;
   edited?: boolean;
-}
+  parent?: string | null;
+};
+
+type CommentTreeNode = Comment & { children: CommentTreeNode[] };
 
 function highlightMentions(text: string) {
   return text.replace(/@([\w]+)/g, '<span class="text-blue-600 font-semibold">@$1</span>');
@@ -114,6 +126,13 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
+  const [replyTo, setReplyTo] = useState<{ answerId: string; parentId: string | null } | null>(null);
+  const [replyInput, setReplyInput] = useState('');
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [bountyAmount, setBountyAmount] = useState('');
+  const [bountyLoading, setBountyLoading] = useState(false);
+  const [awardLoading, setAwardLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestion();
@@ -122,6 +141,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     if (questionData?.question._id && session) {
       checkBookmarkStatus();
+      checkFollowStatus();
     }
   }, [questionData?.question._id, session]);
 
@@ -177,6 +197,17 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     }
   };
 
+  const checkFollowStatus = async () => {
+    if (!session) return;
+    try {
+      const response = await fetch(`/api/questions/${id}/follow`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsFollowed(data.followed);
+      }
+    } catch {}
+  };
+
   const toggleBookmark = async () => {
     if (!session) {
       toast.error('Please sign in to bookmark questions');
@@ -215,6 +246,37 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
       }
     } catch {
       toast.error('An error occurred');
+    }
+  };
+
+  const toggleFollow = async () => {
+    if (!session) {
+      toast.error('Please sign in to follow questions');
+      return;
+    }
+    setFollowLoading(true);
+    try {
+      if (isFollowed) {
+        const response = await fetch(`/api/questions/${id}/follow`, { method: 'DELETE' });
+        if (response.ok) {
+          setIsFollowed(false);
+          toast.success('Unfollowed question');
+        } else {
+          toast.error('Failed to unfollow');
+        }
+      } else {
+        const response = await fetch(`/api/questions/${id}/follow`, { method: 'POST' });
+        if (response.ok) {
+          setIsFollowed(true);
+          toast.success('Following question');
+        } else {
+          toast.error('Failed to follow');
+        }
+      }
+    } catch {
+      toast.error('An error occurred');
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -324,7 +386,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   const handleGenerateELI5 = async (answerId: string) => {
     if (!session) {
-      toast.error('Please sign in to generate ELI5');
+      toast.error('Please sign in to generate a simplified answer');
       return;
     }
 
@@ -339,13 +401,13 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
       });
 
       if (response.ok) {
-        toast.success('ELI5 generated successfully!');
-        fetchQuestion(); // Refresh to show ELI5 content
+        toast.success('Simplified answer generated successfully!');
+        fetchQuestion(); // Refresh to show simplified answer
       } else {
-        toast.error('Failed to generate ELI5');
+        toast.error('Failed to generate simplified answer');
       }
     } catch {
-      toast.error('An error occurred while generating ELI5');
+      toast.error('An error occurred while generating a simplified answer');
     } finally {
       setGeneratingEli5(null);
     }
@@ -389,31 +451,104 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     }
   };
 
-  const handleSubmitComment = async (answerId: string, e: React.FormEvent) => {
+  function buildCommentTree(comments: Comment[]): CommentTreeNode[] {
+    const map: Record<string, CommentTreeNode> = {};
+    const roots: CommentTreeNode[] = [];
+    comments.forEach(comment => {
+      map[comment._id] = { ...comment, children: [] };
+    });
+    comments.forEach(comment => {
+      if (comment.parent) {
+        map[comment.parent]?.children.push(map[comment._id]);
+      } else {
+        roots.push(map[comment._id]);
+      }
+    });
+    return roots;
+  }
+
+  function renderComments(comments: CommentTreeNode[], answerId: string, level = 0): JSX.Element[] {
+    return comments.map(comment => (
+      <div key={comment._id} style={{ marginLeft: level * 24 }} className="flex items-start gap-2 text-sm mt-2">
+        {comment.author.image && (
+          <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
+        )}
+        <div className="flex-1">
+          <span className="font-semibold text-gray-800">{comment.author.name}</span>{' '}
+          <span className="text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+          {comment.edited && <span className="text-xs text-gray-400 ml-2">(edited)</span>}
+          <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: highlightMentions(comment.content) }} />
+          <div className="flex gap-2 mt-1">
+            {session?.user?.email === comment.author.email && (
+              <>
+                <button type="button" className="text-blue-600 hover:underline text-xs" onClick={() => { setEditingCommentId(comment._id); setEditCommentInput(comment.content); }}>Edit</button>
+                <button type="button" className="text-red-600 hover:underline text-xs" onClick={() => handleDeleteComment(answerId, comment._id)}>Delete</button>
+              </>
+            )}
+            <button type="button" className="text-gray-600 hover:underline text-xs" onClick={() => { setReplyTo({ answerId, parentId: comment._id }); setReplyInput(''); }}>Reply</button>
+          </div>
+          {editingCommentId === comment._id && (
+            <form className="flex gap-2 mt-2" onSubmit={e => handleEditComment(answerId, comment._id, e)}>
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                value={editCommentInput}
+                onChange={e => setEditCommentInput(e.target.value)}
+                autoFocus
+              />
+              <Button type="submit" size="sm">Save</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>Cancel</Button>
+            </form>
+          )}
+          {replyTo && replyTo.parentId === comment._id && replyTo.answerId === answerId && (
+            <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answerId, e, comment._id)}>
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                placeholder="Reply..."
+                value={replyInput}
+                onChange={e => setReplyInput(e.target.value)}
+                autoFocus
+              />
+              <Button type="submit" size="sm">Reply</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setReplyTo(null)}>Cancel</Button>
+            </form>
+          )}
+          {comment.children && comment.children.length > 0 && renderComments(comment.children, answerId, level + 1)}
+        </div>
+      </div>
+    ));
+  }
+
+  const handleSubmitComment = async (answerId: string, e: React.FormEvent, parentId: string | null = null) => {
     e.preventDefault();
     if (!session) return;
-    const content = commentInputs[answerId]?.trim();
+    const content = parentId ? replyInput.trim() : commentInputs[answerId]?.trim();
     if (!content) return;
     setSubmittingComment(answerId);
     // Parse mentions (usernames after @)
     const mentionMatches = content.match(/@([\w]+)/g) || [];
     const mentionedNames = mentionMatches.map(m => m.slice(1));
-    // Map usernames to user objects
     const mentionedUsers = allUsers.filter(u => mentionedNames.includes(u.name));
-    const mentions = mentionedUsers.map(u => u.email); // Or use user IDs if available
+    const mentions = mentionedUsers.map(u => u.email);
     try {
       const res = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answerId, content, mentions }),
+        body: JSON.stringify({ answerId, content, mentions, parent: parentId }),
       });
       if (res.ok) {
         const data = await res.json();
-        setCommentsByAnswer((prev) => ({
+        setCommentsByAnswer(prev => ({
           ...prev,
           [answerId]: [...(prev[answerId] || []), data.comment],
         }));
-        setCommentInputs((prev) => ({ ...prev, [answerId]: '' }));
+        if (parentId) {
+          setReplyTo(null);
+          setReplyInput('');
+        } else {
+          setCommentInputs(prev => ({ ...prev, [answerId]: '' }));
+        }
       } else {
         toast.error('Failed to post comment');
       }
@@ -512,6 +647,55 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     }
   };
 
+  const offerOrIncreaseBounty = async () => {
+    if (!bountyAmount.trim() || isNaN(Number(bountyAmount)) || Number(bountyAmount) <= 0) {
+      toast.error('Enter a valid bounty amount');
+      return;
+    }
+    setBountyLoading(true);
+    try {
+      const res = await fetch(`/api/questions/${id}/bounty`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(bountyAmount) }),
+      });
+      if (res.ok) {
+        toast.success('Bounty updated!');
+        setBountyAmount('');
+        fetchQuestion();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || 'Failed to offer bounty');
+      }
+    } catch {
+      toast.error('Failed to offer bounty');
+    } finally {
+      setBountyLoading(false);
+    }
+  };
+
+  const awardBounty = async (answerId: string) => {
+    setAwardLoading(answerId);
+    try {
+      const res = await fetch(`/api/questions/${id}/bounty/award`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answerId }),
+      });
+      if (res.ok) {
+        toast.success('Bounty awarded!');
+        fetchQuestion();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || 'Failed to award bounty');
+      }
+    } catch {
+      toast.error('Failed to award bounty');
+    } finally {
+      setAwardLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -595,12 +779,55 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                 contentId={question._id} 
                 className="flex items-center gap-2"
               />
+              <Button
+                variant={isFollowed ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleFollow}
+                className="flex items-center gap-2"
+                disabled={followLoading}
+              >
+                <Bell className={`h-4 w-4 ${isFollowed ? 'text-blue-600' : ''}`} />
+                {isFollowed ? 'Following' : 'Follow'}
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Question */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          {/* Bounty status display */}
+          {question.bounty && (
+            <div className="mb-4 flex items-center gap-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                💰 Bounty: {question.bounty.amount} {question.bounty.status === 'awarded' && question.bounty.awardedTo ? '(Awarded)' : question.bounty.status === 'open' ? '(Open)' : '(Cancelled)'}
+              </span>
+              {question.bounty.status === 'awarded' && question.bounty.awardedTo && (
+                <span className="text-xs text-gray-600">Awarded to user ID: {question.bounty.awardedTo}</span>
+              )}
+            </div>
+          )}
+          {/* Bounty offer/increase form for author */}
+          {isQuestionAuthor() && (!question.bounty || question.bounty.status === 'open') && (
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
+                placeholder="Bounty amount"
+                value={bountyAmount}
+                onChange={e => setBountyAmount(e.target.value)}
+                disabled={bountyLoading}
+              />
+              <Button
+                size="sm"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                onClick={offerOrIncreaseBounty}
+                disabled={bountyLoading}
+              >
+                {question.bounty && question.bounty.amount > 0 ? 'Increase Bounty' : 'Offer Bounty'}
+              </Button>
+            </div>
+          )}
           <div className="flex gap-4">
             {/* Vote buttons */}
             <div className="flex flex-col items-center">
@@ -703,7 +930,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                         {eli5Mode[answer._id] && answer.eli5Content ? (
                           <div>
                             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                              <h4 className="text-blue-800 font-medium mb-2">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
+                              <h4 className="text-blue-800 font-medium mb-2">🧩 Simplifying the answer for everyone</h4>
                               <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
                             </div>
                             <Button
@@ -725,7 +952,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                 onClick={() => toggleELI5(answer._id)}
                                 className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
                               >
-                                🤔 Show ELI5 Version
+                                🧩 Show Simplified Answer
                               </Button>
                             )}
                             {!answer.eli5Content && (
@@ -736,7 +963,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                 disabled={generatingEli5 === answer._id}
                                 className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
                               >
-                                {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
+                                {generatingEli5 === answer._id ? 'Generating...' : '🧩 Generate Simplified Answer'}
                               </Button>
                             )}
                           </div>
@@ -774,6 +1001,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                           )}
                         </div>
                       </div>
+                      {/* Bounty awarded indicator */}
+                      {question.bounty && question.bounty.status === 'awarded' && question.bounty.awardedTo === answer.author.email && (
+                        <div className="mt-2 text-yellow-700 font-semibold">Bounty Awarded 🏆</div>
+                      )}
                     </div>
                   </div>
 
@@ -781,49 +1012,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                   <div className="mt-6">
                     <div className="font-semibold text-gray-700 mb-2">Comments</div>
                     <div className="space-y-2 mb-2">
-                      {(commentsByAnswer[answer._id] || []).map((comment) => (
-                        <div key={comment._id} className="flex items-start gap-2 text-sm">
-                          {comment.author.image && (
-                            <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
-                          )}
-                          <div>
-                            <span className="font-semibold text-gray-800">{comment.author.name}</span>{' '}
-                            <span className="text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                            {comment.edited && <span className="text-xs text-gray-400 ml-2">(edited)</span>}
-                            <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: highlightMentions(comment.content) }} />
-                            {session?.user?.email === comment.author.email && (
-                              <div className="flex gap-2 mt-1">
-                                <button
-                                  type="button"
-                                  className="text-blue-600 hover:underline text-xs"
-                                  onClick={() => { setEditingCommentId(comment._id); setEditCommentInput(comment.content); }}
-                                >Edit</button>
-                                <button
-                                  type="button"
-                                  className="text-red-600 hover:underline text-xs"
-                                  onClick={() => handleDeleteComment(answer._id, comment._id)}
-                                >Delete</button>
-                              </div>
-                            )}
-                            {editingCommentId === comment._id && (
-                              <form className="flex gap-2 mt-2" onSubmit={e => handleEditComment(answer._id, comment._id, e)}>
-                                <input
-                                  type="text"
-                                  className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                                  value={editCommentInput}
-                                  onChange={e => setEditCommentInput(e.target.value)}
-                                  autoFocus
-                                />
-                                <Button type="submit" size="sm">Save</Button>
-                                <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>Cancel</Button>
-                              </form>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                      {renderComments(buildCommentTree(commentsByAnswer[answer._id] || []), answer._id)}
                     </div>
                     {session ? (
-                      <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e)}>
+                      <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e, null)}>
                         <input
                           ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
                           type="text"
@@ -869,6 +1061,17 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                       <div className="text-xs text-gray-500">Sign in to comment</div>
                     )}
                   </div>
+                  {/* Award bounty button for author if bounty is open */}
+                  {isQuestionAuthor() && question.bounty && question.bounty.status === 'open' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => awardBounty(answer._id)}
+                      disabled={awardLoading === answer._id}
+                    >
+                      💰 Award Bounty
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>

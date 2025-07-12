@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
     await dbConnect();
-    const { answerId, content, mentions } = await request.json();
+    const { answerId, content, mentions, parent } = await request.json();
     if (!answerId || !content?.trim()) {
       return NextResponse.json({ message: 'Answer ID and content are required' }, { status: 400 });
     }
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       author: user._id,
       answer: answerId,
       mentions: mentions || [],
+      parent: parent || null,
       isDeleted: false,
     });
     // Populate author for response

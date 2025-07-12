@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
@@ -25,6 +25,9 @@ export default function AskQuestionPage() {
   const [contentError, setContentError] = useState('');
   const [tagsError, setTagsError] = useState('');
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<{ _id: string; title: string; createdAt: string }[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Common tags for suggestions
   const commonTags = [
@@ -41,6 +44,32 @@ export default function AskQuestionPage() {
     );
     setSuggestedTags(relevant.slice(0, 5));
   }, [title, content, tags]);
+
+  useEffect(() => {
+    if (!title.trim() && !content.trim()) {
+      setSuggestedQuestions([]);
+      return;
+    }
+    setLoadingSuggestions(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ title, content });
+        const res = await fetch(`/api/questions/similar?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestedQuestions(data.questions || []);
+        } else {
+          setSuggestedQuestions([]);
+        }
+      } catch {
+        setSuggestedQuestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, content]);
 
   // Redirect if not authenticated
   if (status === 'loading') {
@@ -245,6 +274,25 @@ export default function AskQuestionPage() {
               )}
             </div>
           </div>
+
+          {(title.trim() || content.trim()) && (
+            <div className="mt-2">
+              {loadingSuggestions ? (
+                <div className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Checking for similar questions...</div>
+              ) : suggestedQuestions.length > 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-2">
+                  <div className="text-sm font-medium text-yellow-800 mb-2">Possible duplicates or similar questions:</div>
+                  <ul className="space-y-1">
+                    {suggestedQuestions.map(q => (
+                      <li key={q._id}>
+                        <Link href={`/questions/${q._id}`} className="text-blue-700 hover:underline">{q.title}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          )}
 
           {/* Content */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

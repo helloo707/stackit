@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { 
   User, 
   Mail, 
-  Calendar, 
   Award, 
   Edit, 
   Save, 
@@ -17,6 +16,7 @@ import {
   Camera
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 interface UserProfile {
   _id: string;
@@ -29,6 +29,20 @@ interface UserProfile {
   updatedAt: string;
 }
 
+interface FollowedQuestion {
+  _id: string;
+  title: string;
+  createdAt?: string;
+}
+
+interface ReputationChange {
+  change: number;
+  reason: string;
+  relatedQuestion?: string;
+  relatedAnswer?: string;
+  createdAt: string;
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -39,6 +53,10 @@ export default function ProfilePage() {
     name: '',
     email: '',
   });
+  const [followedQuestions, setFollowedQuestions] = useState<FollowedQuestion[]>([]);
+  const [loadingFollows, setLoadingFollows] = useState(true);
+  const [reputationHistory, setReputationHistory] = useState<ReputationChange[]>([]);
+  const [loadingReputation, setLoadingReputation] = useState(true);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -49,6 +67,8 @@ export default function ProfilePage() {
     }
 
     fetchUserProfile();
+    fetchFollowedQuestions();
+    fetchReputationHistory();
   }, [session, status]);
 
   const fetchUserProfile = async () => {
@@ -70,6 +90,40 @@ export default function ProfilePage() {
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowedQuestions = async () => {
+    try {
+      setLoadingFollows(true);
+      const res = await fetch('/api/questions/followed');
+      if (res.ok) {
+        const data = await res.json();
+        setFollowedQuestions(data.questions || []);
+      } else {
+        setFollowedQuestions([]);
+      }
+    } catch {
+      setFollowedQuestions([]);
+    } finally {
+      setLoadingFollows(false);
+    }
+  };
+
+  const fetchReputationHistory = async () => {
+    try {
+      setLoadingReputation(true);
+      const res = await fetch('/api/user/reputation');
+      if (res.ok) {
+        const data = await res.json();
+        setReputationHistory(data.reputationHistory || []);
+      } else {
+        setReputationHistory([]);
+      }
+    } catch {
+      setReputationHistory([]);
+    } finally {
+      setLoadingReputation(false);
     }
   };
 
@@ -146,7 +200,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Information */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-8">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
@@ -255,6 +309,55 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+            </div>
+            {/* Followed Questions Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Followed Questions</h2>
+              {loadingFollows ? (
+                <div className="text-gray-500">Loading followed questions...</div>
+              ) : followedQuestions.length === 0 ? (
+                <div className="text-gray-500">You are not following any questions yet.</div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {followedQuestions.map((q) => (
+                    <li key={q._id} className="py-3">
+                      <Link href={`/questions/${q._id}`} className="text-blue-600 hover:underline font-medium">
+                        {q.title}
+                      </Link>
+                      <span className="ml-2 text-xs text-gray-400">{q.createdAt ? new Date(q.createdAt).toLocaleDateString() : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {/* Reputation History Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Reputation History</h2>
+              {loadingReputation ? (
+                <div className="text-gray-500">Loading reputation history...</div>
+              ) : reputationHistory.length === 0 ? (
+                <div className="text-gray-500">No reputation changes yet.</div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {reputationHistory.map((r, i) => (
+                    <li key={i} className="py-3 flex items-center justify-between">
+                      <div>
+                        <span className={r.change > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                          {r.change > 0 ? '+' : ''}{r.change}
+                        </span>
+                        <span className="ml-2 text-gray-800">{r.reason}</span>
+                        {r.relatedQuestion && (
+                          <Link href={`/questions/${r.relatedQuestion}`} className="ml-2 text-blue-600 hover:underline text-xs">[question]</Link>
+                        )}
+                        {r.relatedAnswer && (
+                          <Link href={`/questions/${r.relatedQuestion}#answer-${r.relatedAnswer}`} className="ml-2 text-blue-600 hover:underline text-xs">[answer]</Link>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 

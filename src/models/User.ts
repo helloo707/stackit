@@ -7,6 +7,7 @@ export interface IUser extends Document {
   role: 'guest' | 'user' | 'admin';
   reputation: number;
   bookmarks: mongoose.Types.ObjectId[];
+  follows: mongoose.Types.ObjectId[];
   notifications: {
     _id?: mongoose.Types.ObjectId;
     type: 'answer' | 'vote' | 'accept' | 'flag' | 'admin';
@@ -15,6 +16,13 @@ export interface IUser extends Document {
     relatedQuestion?: mongoose.Types.ObjectId;
     relatedAnswer?: mongoose.Types.ObjectId;
     isRead: boolean;
+    createdAt: Date;
+  }[];
+  reputationHistory?: {
+    change: number;
+    reason: string;
+    relatedQuestion?: mongoose.Types.ObjectId;
+    relatedAnswer?: mongoose.Types.ObjectId;
     createdAt: Date;
   }[];
   createdAt: Date;
@@ -41,6 +49,10 @@ const UserSchema = new Schema<IUser>({
   bookmarks: [{ 
     type: Schema.Types.ObjectId, 
     ref: 'Question' 
+  }],
+  follows: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Question',
   }],
   notifications: [{
     type: {
@@ -72,7 +84,16 @@ const UserSchema = new Schema<IUser>({
       type: Date,
       default: Date.now,
     }
-  }]
+  }],
+  reputationHistory: [
+    {
+      change: { type: Number, required: true },
+      reason: { type: String, required: true },
+      relatedQuestion: { type: Schema.Types.ObjectId, ref: 'Question' },
+      relatedAnswer: { type: Schema.Types.ObjectId, ref: 'Answer' },
+      createdAt: { type: Date, default: Date.now },
+    }
+  ]
 }, {
   timestamps: true,
 });
