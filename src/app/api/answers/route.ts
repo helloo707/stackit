@@ -5,6 +5,7 @@ import dbConnect from '@/lib/db';
 import Answer from '@/models/Answer';
 import Question from '@/models/Question';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,12 +72,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create notification for question author if the answerer is not the author
+    if (user._id.toString() !== question.author.toString()) {
+      try {
+        // Create notification using Notification model
+        await Notification.create({
+          recipient: question.author,
+          sender: user._id,
+          type: 'answer',
+          title: 'New Answer Added',
+          message: `${user.name} answered your question: "${question.title}"`,
+          relatedQuestion: question._id,
+          relatedAnswer: answer._id,
+          isRead: false,
+          metadata: {
+            questionTitle: question.title,
+            answerSnippet: answer.content.length > 100 
+              ? answer.content.substring(0, 100) + '...' 
+              : answer.content,
+            senderName: user.name,
+            senderImage: user.image,
+            actionDetails: {
+              who: user.name,
+              what: 'answered a question',
+              where: question.title
+            }
+          },
+        });
+
+        console.log('Answer notification created successfully');
+      } catch (notificationError) {
+        console.error('Failed to create answer notification:', notificationError);
+      }
+    }
+
     return NextResponse.json({
       id: answer._id,
-      content: answer.content,
-      author: (populatedAnswer as any).author,
-      questionId: answer.question,
       message: 'Answer created successfully',
+      answer: populatedAnswer,
     });
   } catch (error) {
     console.error('Error creating answer:', error);

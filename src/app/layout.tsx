@@ -4,8 +4,12 @@ import "./globals.css";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import BanCheck from "@/components/BanCheck";
 import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "StackIt - Collaborative Q&A Platform",
@@ -18,14 +22,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <NextAuthProvider>
-          <BanCheck>
-            {children}
-          </BanCheck>
-          <Toaster position="top-right" />
-        </NextAuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans`}>
+        <ThemeProvider
+          attribute="data-theme"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NextAuthProvider>
+            <BanCheck>
+              {children}
+            </BanCheck>
+            <Toaster position="top-right" />
+          </NextAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
