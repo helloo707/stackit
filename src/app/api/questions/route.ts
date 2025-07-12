@@ -7,6 +7,7 @@ import User from '@/models/User';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("question function called")
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
