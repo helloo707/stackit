@@ -15,6 +15,7 @@ import {
   Target,
   Flame
 } from 'lucide-react';
+import Image from 'next/image';
 
 interface LeaderboardUser {
   _id: string;
@@ -129,9 +130,11 @@ export default function LeaderboardPage() {
           <div className="text-center pt-6">
             <Link href={`/profile/${user._id}`} className="block hover:opacity-80 transition-opacity">
               {user.image ? (
-                <img 
+                <Image 
                   src={user.image} 
                   alt={user.name} 
+                  width={80}
+                  height={80}
                   className={`w-20 h-20 rounded-full border-4 mx-auto mb-3 shadow-lg ${
                     rank === 1 ? 'border-yellow-400' :
                     rank === 2 ? 'border-gray-400' :
@@ -241,9 +244,11 @@ export default function LeaderboardPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {currentUser.image ? (
-                      <img 
+                      <Image 
                         src={currentUser.image} 
                         alt={currentUser.name} 
+                        width={64}
+                        height={64}
                         className="w-16 h-16 rounded-full border-2 border-blue shadow-lg" 
                       />
                     ) : (
@@ -336,9 +341,11 @@ export default function LeaderboardPage() {
                           <td className="px-6 py-4">
                             <Link href={`/profile/${user._id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                           {user.image ? (
-                                <img 
+                                <Image 
                                   src={user.image} 
                                   alt={user.name} 
+                                  width={48}
+                                  height={48}
                                   className={`w-12 h-12 rounded-full border-2 shadow-md ${
                                     i === 0 ? 'border-yellow-400' : 
                                     i === 1 ? 'border-gray-400' : 

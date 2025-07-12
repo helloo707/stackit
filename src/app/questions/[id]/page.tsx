@@ -34,6 +34,7 @@ import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/components/prism-markup';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import Image from 'next/image';
 
 interface Answer {
   _id: string;
@@ -473,7 +474,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     return comments.map(comment => (
       <div key={comment._id} style={{ marginLeft: level * 24 }} className="flex items-start gap-2 text-sm mt-2">
         {comment.author.image && (
-          <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
+          <Image src={comment.author.image} alt={comment.author.name} width={24} height={24} className="w-6 h-6 rounded-full" />
         )}
         <div className="flex-1">
           <span className="font-semibold text-gray-800">{comment.author.name}</span>{' '}
@@ -888,7 +889,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
           {/* Toggle Button Group */}
           <div className="flex justify-end mb-6">
-            <ToggleGroup type="single" value={showAnswerForm ? 'answer' : 'answers'} onValueChange={val => setShowAnswerForm(val === 'answer')}>
+            <ToggleGroup onValueChange={val => setShowAnswerForm(val === 'answer')}>
               <ToggleGroupItem value="answers" aria-label="View Answers" className="font-inter">View Answers</ToggleGroupItem>
               <ToggleGroupItem value="answer" aria-label="Your Answer" className="font-inter">Your Answer</ToggleGroupItem>
             </ToggleGroup>
@@ -958,7 +959,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                           <div className="flex items-center gap-3">
                             {answer.author.image ? (
-                              <img src={answer.author.image} alt={answer.author.name} className="w-8 h-8 rounded-full object-cover" />
+                              <Image src={answer.author.image} alt={answer.author.name} width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
                             ) : (
                               <User className="w-8 h-8 text-muted-foreground bg-muted rounded-full p-1" />
                             )}
@@ -1116,7 +1117,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                                         className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
                                         onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
                                       >
-                                        {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
+                                        {u.image && <Image src={u.image} alt={u.name} width={20} height={20} className="w-5 h-5 rounded-full" />}
                                         <span>{u.name}</span>
                 </div>
               ))}
