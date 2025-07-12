@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from './ui/button';
 import { Bell, MessageSquare, ThumbsUp, Award, Bookmark, X } from 'lucide-react';
 import Link from 'next/link';
@@ -43,7 +42,6 @@ const extractId = (item: string | { _id: string } | null | undefined): string | 
 };
 
 export default function NotificationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { data: session, status } = useSession();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +49,10 @@ export default function NotificationModal({ open, onClose }: { open: boolean; on
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open && status === 'authenticated') {
+    if (open) {
       fetchNotifications();
     }
-    // eslint-disable-next-line
-  }, [open, status]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +74,7 @@ export default function NotificationModal({ open, onClose }: { open: boolean; on
       const data: NotificationsResponse = await response.json();
       setNotifications(data.notifications);
       setUnreadCount(data.notifications.filter(n => !n.isRead).length);
-    } catch (err) {
+    } catch {
       setError('Could not load notifications');
     } finally {
       setLoading(false);

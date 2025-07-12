@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 interface UserStats {
   questionsAsked: number;
@@ -184,9 +185,11 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-4">
                 <div className="w-16 h-16 bg-blue/10 rounded-full flex items-center justify-center">
                   {userProfile?.image ? (
-                    <img 
+                    <Image 
                       src={userProfile.image} 
                       alt={userProfile.name}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 rounded-full object-cover"
                     />
                   ) : (

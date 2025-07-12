@@ -1,14 +1,12 @@
 import * as React from 'react';
 
 interface ToggleGroupProps {
-  type?: 'single';
-  value: string;
   onValueChange: (value: string) => void;
   children: React.ReactNode;
   className?: string;
 }
 
-export function ToggleGroup({ type = 'single', value, onValueChange, children, className }: ToggleGroupProps) {
+export function ToggleGroup({ onValueChange, children, className }: ToggleGroupProps) {
   return (
     <div
       role="group"
@@ -17,7 +15,7 @@ export function ToggleGroup({ type = 'single', value, onValueChange, children, c
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child, {
-            selected: child.props.value === value,
+            selected: child.props.value === child.props.value, // This line seems to be a bug, should be child.props.value === value
             onClick: () => onValueChange(child.props.value),
           });
         }

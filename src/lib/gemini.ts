@@ -165,14 +165,14 @@ export async function prioritizeQuestions(questions: QuestionSummary[]): Promise
       ) {
         try {
           prioritizedIds = JSON.parse(candidate.content.parts[0].text);
-        } catch (e) {
+        } catch {
           prioritizedIds = [];
         }
       }
     } else if (typeof response.text === 'string') {
       try {
         prioritizedIds = JSON.parse(response.text);
-      } catch (e) {
+      } catch {
         prioritizedIds = [];
       }
     }
