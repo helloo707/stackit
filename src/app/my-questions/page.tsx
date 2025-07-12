@@ -198,10 +198,18 @@ export default function MyQuestionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -464,6 +472,7 @@ export default function MyQuestionsPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

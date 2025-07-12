@@ -89,11 +89,19 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center items-center py-12 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col justify-center items-center py-12 px-4">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 w-full max-w-md">
         <div className="card-modern p-8 mb-8 text-center">
-          <div className="w-12 h-12 bg-blue rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">S</span>
+        <div className="w-42 h-12 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+          <span className="text-xl font-bold  text-foreground font-orbitron font-inter">StackIt</span>
           </div>
           <h2 className="text-3xl font-bold text-foreground font-inter mb-2">Create your account</h2>
           <p className="text-sm text-muted-foreground font-inter">

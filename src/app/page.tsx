@@ -38,12 +38,22 @@ export default function HomePage() {
   // Show loading while checking session
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-background relative overflow-hidden ">
+        {/* Grid and Pattern Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grid z-0"></div>
+          <div className="absolute inset-0 bg-pattern z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+          </div>
+        </div>
+        <div className="relative z-10 pt-16">
+          <Navigation />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mx-auto"></div>
+              <p className="mt-4 text-muted-foreground font-inter">Loading...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -55,7 +65,7 @@ export default function HomePage() {
   //   return null;
   // }
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden ">
       {/* Enhanced Animated Background with Grid */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-grid z-0"></div>
@@ -71,8 +81,8 @@ export default function HomePage() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center relative z-10">
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 pt-16">
+        <div className="max-w-7xl mx-auto text-center relative z-10 pt-16">
           <div className="slide-up">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-gradient-ocean text-foreground  px-6 py-3 rounded-full text-sm font-medium mb-8 shadow-glow">
@@ -82,7 +92,7 @@ export default function HomePage() {
             
             <h1 className="text-responsive font-bold mb-6 text-foreground bg-gradient-to-r from-blue via-purple to-emerald bg-clip-text dark:bg-clip-text font-orbitron font-inter">
               StackIt
-            </h1>
+          </h1>
             
             <p className="text-responsive-lg mb-8 text-foreground max-w-3xl mx-auto leading-relaxed font-inter">
               Experience the next generation of collaborative learning. 
@@ -90,7 +100,7 @@ export default function HomePage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/questions">
+            <Link href="/questions">
                 <Button 
                   size="lg" 
                   className="bg-blue text-white shadow-futuristic pulse-glow group hover:bg-blue-light focus:bg-blue-light"
@@ -98,18 +108,18 @@ export default function HomePage() {
                   <Search className="h-5 w-5 mr-2 group-hover:translate-x-1 transition-transform" />
                   Explore Questions
                   <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/questions/ask">
+              </Button>
+            </Link>
+            <Link href="/questions/ask">
                 <Button 
                   size="lg" 
                   variant="outline" 
                   className="border-2 border-purple text-purple hover:bg-purple hover:text-white transition-all duration-300 group shadow-glow"
                 >
                   <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform" />
-                  Ask a Question
-                </Button>
-              </Link>
+                Ask a Question
+              </Button>
+            </Link>
             </div>
           </div>
         </div>

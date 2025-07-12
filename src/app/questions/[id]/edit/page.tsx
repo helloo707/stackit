@@ -141,12 +141,22 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-4 text-gray-600">Loading question...</p>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Grid and Pattern Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grid z-0"></div>
+          <div className="absolute inset-0 bg-pattern z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+          </div>
+        </div>
+        <div className="relative z-10 pt-16">
+          <Navigation />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue font-inter" />
+              <p className="mt-4 text-muted-foreground font-inter">Loading question...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -159,15 +169,25 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex">
-              <AlertCircle className="h-5 w-5 text-red-400" />
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <p className="mt-1 text-sm text-red-700">{error}</p>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Grid and Pattern Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grid z-0"></div>
+          <div className="absolute inset-0 bg-pattern z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+          </div>
+        </div>
+        <div className="relative z-10 pt-16">
+          <Navigation />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 font-inter">
+              <div className="flex">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800 font-inter">Error</h3>
+                  <p className="mt-1 text-sm text-red-700 font-inter">{error}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -178,13 +198,23 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
 
   if (!question) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Question not found</h3>
-            <p className="mt-2 text-gray-600">The question you're looking for doesn't exist.</p>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Grid and Pattern Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grid z-0"></div>
+          <div className="absolute inset-0 bg-pattern z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+          </div>
+        </div>
+        <div className="relative z-10 pt-16">
+          <Navigation />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground font-inter" />
+              <h3 className="mt-4 text-lg font-medium text-foreground font-inter">Question not found</h3>
+              <p className="mt-2 text-muted-foreground font-inter">The question you're looking for doesn't exist.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -194,13 +224,23 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
   // Check if user is the author
   if (question.author.email !== session.user?.email) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Access Denied</h3>
-            <p className="mt-2 text-gray-600">You can only edit your own questions.</p>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Grid and Pattern Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-grid z-0"></div>
+          <div className="absolute inset-0 bg-pattern z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+          </div>
+        </div>
+        <div className="relative z-10 pt-16">
+          <Navigation />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground font-inter" />
+              <h3 className="mt-4 text-lg font-medium text-foreground font-inter">Access Denied</h3>
+              <p className="mt-2 text-muted-foreground font-inter">You can only edit your own questions.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -208,21 +248,29 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
+        </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Question</h1>
-          <p className="text-gray-600 mt-2">Update your question to make it clearer and more helpful.</p>
+          <h1 className="text-3xl font-bold text-foreground">Edit Question</h1>
+          <p className="text-muted-foreground mt-2">Update your question to make it clearer and more helpful.</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
               Title *
             </label>
             <Input
@@ -234,14 +282,14 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
               className="w-full"
               required
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Make sure your title clearly describes your problem.
             </p>
           </div>
 
           {/* Content */}
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="content" className="block text-sm font-medium text-foreground mb-2">
               Content *
             </label>
             <RichTextEditor
@@ -249,14 +297,14 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
               onChange={setContent}
               placeholder="Provide all the information someone would need to answer your question..."
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Include relevant code, error messages, and context.
             </p>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Tags * (up to 5)
             </label>
             <div className="flex gap-2 mb-2">
@@ -283,14 +331,14 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
+                  className="inline-flex items-center gap-1 bg-blue/10 text-blue text-sm px-3 py-1 rounded-full font-inter"
                 >
                   <Tag className="h-3 w-3" />
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-1 hover:text-blue-600"
+                    className="ml-1 hover:text-blue-light"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -298,7 +346,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
               ))}
             </div>
             
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Tags help others find your question. Use relevant programming languages, frameworks, or technologies.
             </p>
           </div>
@@ -308,7 +356,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
             <Button
               type="submit"
               disabled={saving || !title.trim() || !content.trim() || tags.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue hover:bg-blue-light font-inter"
             >
               {saving ? (
                 <>
@@ -327,11 +375,13 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
               type="button"
               variant="outline"
               onClick={() => router.back()}
+              className="font-inter"
             >
               Cancel
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -134,145 +134,155 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Profile Card */}
-        <div className="flex flex-col items-center justify-center bg-card rounded-2xl shadow-md border border-border p-8 mb-10 font-inter">
-          <div className="relative mb-4">
-            <div className="w-28 h-28 bg-blue/10 rounded-full flex items-center justify-center relative">
-              {userProfile?.image ? (
-                <img 
-                  src={userProfile.image} 
-                  alt={userProfile.name}
-                  className="w-28 h-28 rounded-full object-cover"
-                />
-              ) : (
-                <User className="h-14 w-14 text-blue" />
-              )}
-              {editing && (
-                <button className="absolute bottom-1 right-1 w-8 h-8 bg-blue rounded-full flex items-center justify-center text-white hover:bg-blue-dark">
-                  <Camera className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-1 font-inter">{editing ? formData.name : userProfile?.name}</h2>
-          <p className="text-muted-foreground font-inter mb-1">{userProfile?.email}</p>
-          <div className="flex items-center gap-2 mb-2">
-            <Award className="h-4 w-4 text-yellow-500" />
-            <span className="text-sm text-muted-foreground font-inter">{userProfile?.role}</span>
-            <span className="text-xs text-muted-foreground font-inter">•</span>
-            <span className="text-sm text-blue font-inter">{userProfile?.reputation || 0} reputation</span>
-          </div>
-          <div>
-            {!editing ? (
-              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            ) : (
-              <div className="flex space-x-2">
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
         </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Details and Editable Fields */}
-          <div className="flex-1 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
-              {/* Account Details */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Account Details</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1 font-inter">Member Since</label>
-                    <p className="text-foreground font-inter">{userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1 font-inter">Last Updated</label>
-                    <p className="text-foreground font-inter">{userProfile?.updatedAt ? formatDate(userProfile.updatedAt) : 'N/A'}</p>
-                  </div>
-                </div>
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero Profile Card */}
+          <div className="flex flex-col items-center justify-center bg-card rounded-2xl shadow-md border border-border p-8 mb-10 font-inter">
+            <div className="relative mb-4">
+              <div className="w-28 h-28 bg-blue/10 rounded-full flex items-center justify-center relative">
+                {userProfile?.image ? (
+                  <img 
+                    src={userProfile.image} 
+                    alt={userProfile.name}
+                    className="w-28 h-28 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-14 w-14 text-blue" />
+                )}
+                {editing && (
+                  <button className="absolute bottom-1 right-1 w-8 h-8 bg-blue rounded-full flex items-center justify-center text-white hover:bg-blue-dark">
+                    <Camera className="h-4 w-4" />
+                  </button>
+                )}
               </div>
-              {/* Editable Fields */}
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Personal Info</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1 font-inter">Full Name</label>
-                    {editing ? (
-                      <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Enter your full name"
-                        className="font-inter"
-                      />
-                    ) : (
-                      <p className="text-foreground font-inter">{userProfile?.name}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1 font-inter">Email Address</label>
-                    {editing ? (
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter your email"
-                        className="font-inter"
-                      />
-                    ) : (
-                      <p className="text-foreground font-inter">{userProfile?.email}</p>
-                    )}
-                  </div>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-1 font-inter">{editing ? formData.name : userProfile?.name}</h2>
+            <p className="text-muted-foreground font-inter mb-1">{userProfile?.email}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="h-4 w-4 text-yellow-500" />
+              <span className="text-sm text-muted-foreground font-inter">{userProfile?.role}</span>
+              <span className="text-xs text-muted-foreground font-inter">•</span>
+              <span className="text-sm text-blue font-inter">{userProfile?.reputation || 0} reputation</span>
+            </div>
+            <div>
+              {!editing ? (
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              ) : (
+                <div className="flex space-x-2">
+                  <Button size="sm" onClick={handleSave}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="flex flex-col gap-6 lg:w-80 mt-8 lg:mt-0">
-            {/* Account Stats */}
-            <div className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
-              <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Account Stats</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-inter">Reputation</span>
-                  <span className="font-semibold text-foreground font-inter">{userProfile?.reputation || 0}</span>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Details and Editable Fields */}
+            <div className="flex-1 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
+                {/* Account Details */}
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Account Details</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1 font-inter">Member Since</label>
+                      <p className="text-foreground font-inter">{userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1 font-inter">Last Updated</label>
+                      <p className="text-foreground font-inter">{userProfile?.updatedAt ? formatDate(userProfile.updatedAt) : 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-inter">Role</span>
-                  <span className="font-semibold text-foreground font-inter capitalize">{userProfile?.role}</span>
+                {/* Editable Fields */}
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Personal Info</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1 font-inter">Full Name</label>
+                      {editing ? (
+                        <Input
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="Enter your full name"
+                          className="font-inter"
+                        />
+                      ) : (
+                        <p className="text-foreground font-inter">{userProfile?.name}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1 font-inter">Email Address</label>
+                      {editing ? (
+                        <Input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="Enter your email"
+                          className="font-inter"
+                        />
+                      ) : (
+                        <p className="text-foreground font-inter">{userProfile?.email}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
-              <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Quick Actions</h3>
-              <div className="flex flex-col gap-3">
-                <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
-                  <User className="h-4 w-4" />
-                  View Dashboard
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
-                  <Mail className="h-4 w-4" />
-                  Change Password
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
-                  <Award className="h-4 w-4" />
-                  View Achievements
-                </Button>
+            {/* Sidebar */}
+            <div className="flex flex-col gap-6 lg:w-80 mt-8 lg:mt-0">
+              {/* Account Stats */}
+              <div className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
+                <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Account Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-inter">Reputation</span>
+                    <span className="font-semibold text-foreground font-inter">{userProfile?.reputation || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-inter">Role</span>
+                    <span className="font-semibold text-foreground font-inter capitalize">{userProfile?.role}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
+                <h3 className="text-lg font-semibold text-foreground mb-4 font-inter">Quick Actions</h3>
+                <div className="flex flex-col gap-3">
+                  <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
+                    <User className="h-4 w-4" />
+                    View Dashboard
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
+                    <Mail className="h-4 w-4" />
+                    Change Password
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start gap-2 font-inter font-medium rounded-xl hover:bg-muted transition-all">
+                    <Award className="h-4 w-4" />
+                    View Achievements
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

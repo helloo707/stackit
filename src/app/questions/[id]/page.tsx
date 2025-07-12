@@ -32,6 +32,7 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/components/prism-markup';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Answer {
   _id: string;
@@ -114,6 +115,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentInput, setEditCommentInput] = useState('');
+  const [showAnswerForm, setShowAnswerForm] = useState(false);
 
   useEffect(() => {
     fetchQuestion();
@@ -543,380 +545,401 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Questions
-          </Link>
-          <h1 className="text-3xl font-bold text-foreground mb-4 font-inter">{question.title}</h1>
-          
-          {/* Meta */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-6 font-inter">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>Asked by {question.author.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(question.createdAt)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                <span>{question.views} views</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleBookmark}
-                className="flex items-center gap-2 font-inter"
-              >
-                {isBookmarked ? (
-                  <>
-                    <BookmarkCheck className="h-4 w-4 text-blue" />
-                    Bookmarked
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="h-4 w-4" />
-                    Bookmark
-                  </>
-                )}
-              </Button>
-              <FlagButton 
-                contentType="question" 
-                contentId={question._id} 
-                className="flex items-center gap-2"
-              />
-            </div>
-          </div>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Grid and Pattern Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-grid z-0"></div>
+        <div className="absolute inset-0 bg-pattern z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue/5 via-purple/5 to-emerald/5"></div>
         </div>
-
-        {/* Question */}
-        <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-8 font-inter">
-          <div className="flex gap-4">
-            {/* Vote buttons */}
-            <div className="flex flex-col items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue' : ''}`}
-                onClick={() => handleVote('question', question._id, 'upvote')}
-                disabled={voting === question._id}
-              >
-                <ThumbsUp className="h-5 w-5" />
-              </Button>
-              <div className="text-lg font-semibold text-blue my-2 font-inter">
-                {getVoteCount(question.votes)}
+      </div>
+      <div className="relative z-10 pt-16">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <Link href="/questions" className="inline-flex items-center text-blue hover:text-blue-light mb-4 font-inter">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Questions
+            </Link>
+            <h1 className="text-3xl font-bold text-foreground mb-4 font-inter">{question.title}</h1>
+            
+            {/* Meta */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-6 font-inter">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Asked by {question.author.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(question.createdAt)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  <span>{question.views} views</span>
+                </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-1 ${hasUserVoted(question.votes, 'downvote') ? 'text-red-600' : ''}`}
-                onClick={() => handleVote('question', question._id, 'downvote')}
-                disabled={voting === question._id}
-              >
-                <ThumbsDown className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Question content */}
-            <div className="flex-1">
-              <div 
-                className="prose max-w-none text-foreground font-inter"
-                dangerouslySetInnerHTML={{ __html: question.content }}
-              />
-              
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mt-6">
-                {question.tags.map((tag) => (
-                  <Link key={tag} href={`/tags/${tag}`}>
-                    <span className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full hover:bg-blue/20 cursor-pointer flex items-center gap-1 font-inter">
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </span>
-                  </Link>
-                ))}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleBookmark}
+                  className="flex items-center gap-2 font-inter"
+                >
+                  {isBookmarked ? (
+                    <>
+                      <BookmarkCheck className="h-4 w-4 text-blue" />
+                      Bookmarked
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="h-4 w-4" />
+                      Bookmark
+                    </>
+                  )}
+                </Button>
+                <FlagButton 
+                  contentType="question" 
+                  contentId={question._id} 
+                  className="flex items-center gap-2"
+                />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Answers */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground font-inter">
-              {uniqueAnswers.length} Answer{uniqueAnswers.length !== 1 ? 's' : ''}
-            </h2>
+          {/* Toggle Button Group */}
+          <div className="flex justify-end mb-6">
+            <ToggleGroup type="single" value={showAnswerForm ? 'answer' : 'answers'} onValueChange={val => setShowAnswerForm(val === 'answer')}>
+              <ToggleGroupItem value="answers" aria-label="View Answers" className="font-inter">View Answers</ToggleGroupItem>
+              <ToggleGroupItem value="answer" aria-label="Your Answer" className="font-inter">Your Answer</ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
-          {uniqueAnswers.length === 0 ? (
-            <div className="bg-card rounded-2xl shadow-md border border-border p-8 text-center font-inter">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4 font-inter">No answers yet. Be the first to answer this question!</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {uniqueAnswers.map((answer) => (
-                <div key={answer._id} className="bg-card rounded-2xl shadow-md border border-border p-6 font-inter">
-                  <div className="flex gap-4">
-                    {/* Vote buttons */}
-                    <div className="flex flex-col items-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue' : ''}`}
-                        onClick={() => handleVote('answer', answer._id, 'upvote')}
-                        disabled={voting === answer._id}
+          {/* Conditionally render answer form or answers list */}
+          {showAnswerForm ? (
+            session ? (
+              isQuestionAuthor() ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-8">
+                  <p className="text-yellow-800">You cannot answer your own question.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
+                  <form onSubmit={handleSubmitAnswer}>
+                    <RichTextEditor
+                      content={answerContent}
+                      onChange={setAnswerContent}
+                      placeholder="Write your answer here..."
+                    />
+                    <div className="flex justify-end mt-4">
+                      <Button
+                        type="submit"
+                        disabled={submittingAnswer || !answerContent.trim()}
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
-                        <ThumbsUp className="h-5 w-5" />
+                        {submittingAnswer ? 'Posting...' : 'Post Answer'}
                       </Button>
-                      <div className="text-lg font-semibold text-blue my-2 font-inter">
-                        {getVoteCount(answer.votes)}
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`p-1 ${hasUserVoted(answer.votes, 'downvote') ? 'text-red-600' : ''}`}
-                        onClick={() => handleVote('answer', answer._id, 'downvote')}
-                        disabled={voting === answer._id}
-                      >
-                        <ThumbsDown className="h-5 w-5" />
-                      </Button>
-                      {answer.isAccepted && (
-                        <div className="mt-2">
-                          <Check className="h-6 w-6 text-emerald" />
-                        </div>
-                      )}
                     </div>
+                  </form>
+                </div>
+              )
+            ) : (
+              <div className="bg-blue/10 border border-blue rounded-2xl p-6 text-center font-inter mb-8">
+                <p className="text-blue mb-4 font-inter">Please sign in to answer this question</p>
+                <Link href="/auth/signin">
+                  <Button className="bg-blue hover:bg-blue-light font-inter">
+                    Sign In to Answer
+                  </Button>
+                </Link>
+              </div>
+            )
+          ) : (
+            <>
+              {/* Question */}
+              <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-8 font-inter">
+                <div className="flex gap-4">
+                  {/* Vote buttons */}
+                  <div className="flex flex-col items-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`p-1 ${hasUserVoted(question.votes, 'upvote') ? 'text-blue' : ''}`}
+                      onClick={() => handleVote('question', question._id, 'upvote')}
+                      disabled={voting === question._id}
+                    >
+                      <ThumbsUp className="h-5 w-5" />
+                    </Button>
+                    <div className="text-lg font-semibold text-blue my-2 font-inter">
+                      {getVoteCount(question.votes)}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`p-1 ${hasUserVoted(question.votes, 'downvote') ? 'text-red-600' : ''}`}
+                      onClick={() => handleVote('question', question._id, 'downvote')}
+                      disabled={voting === question._id}
+                    >
+                      <ThumbsDown className="h-5 w-5" />
+                    </Button>
+                  </div>
 
-                    {/* Answer content */}
-                    <div className="flex-1">
-                      <div 
-                        className="prose max-w-none text-foreground font-inter"
-                        dangerouslySetInnerHTML={{ __html: answer.content }}
-                      />
-                      
-                      <div className="prose max-w-none mb-4">
-                        {eli5Mode[answer._id] && answer.eli5Content ? (
-                          <div>
-                            <div className="bg-blue/10 border-l-4 border-blue p-4 mb-4">
-                              <h4 className="text-blue font-medium mb-2 font-inter">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
-                              <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
-                            </div>
+                  {/* Question content */}
+                  <div className="flex-1">
+                    <div 
+                      className="prose max-w-none text-foreground font-inter"
+                      dangerouslySetInnerHTML={{ __html: question.content }}
+                    />
+                    
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mt-6">
+                      {question.tags.map((tag) => (
+                        <Link key={tag} href={`/tags/${tag}`}>
+                          <span className="bg-blue/10 text-blue text-sm px-3 py-1 rounded-full hover:bg-blue/20 cursor-pointer flex items-center gap-1 font-inter">
+                            <Tag className="h-3 w-3" />
+                            {tag}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Answers */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground font-inter">
+                    {uniqueAnswers.length} Answer{uniqueAnswers.length !== 1 ? 's' : ''}
+                  </h2>
+                </div>
+
+                {uniqueAnswers.length === 0 ? (
+                  <div className="bg-card rounded-2xl shadow-md border border-border p-8 text-center font-inter">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4 font-inter">No answers yet. Be the first to answer this question!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {uniqueAnswers.map((answer) => (
+                      <div
+                        key={answer._id}
+                        className={`relative bg-card rounded-2xl shadow-md border p-6 font-inter transition-all ${answer.isAccepted ? 'border-emerald shadow-lg ring-2 ring-emerald/30' : 'border-border'}`}
+                      >
+                        {/* Top Row: Author, Date, Accepted Badge, Vote Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                          <div className="flex items-center gap-3">
+                            {answer.author.image ? (
+                              <img src={answer.author.image} alt={answer.author.name} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <User className="w-8 h-8 text-muted-foreground bg-muted rounded-full p-1" />
+                            )}
+                            <span className="font-semibold text-foreground font-inter">{answer.author.name}</span>
+                            <span className="text-xs text-muted-foreground font-inter">{new Date(answer.createdAt).toLocaleDateString()}</span>
+                            {answer.isAccepted && (
+                              <span className="inline-flex items-center gap-1 bg-emerald/10 text-emerald text-xs px-2 py-1 rounded-full font-semibold ml-2">
+                                <Check className="h-4 w-4" /> Accepted
+                              </span>
+                            )}
+                          </div>
+                          {/* Vote Buttons */}
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => toggleELI5(answer._id)}
-                              className="text-blue border-blue hover:bg-blue/10 font-inter"
+                              className={`p-1 ${hasUserVoted(answer.votes, 'upvote') ? 'text-blue' : ''}`}
+                              onClick={() => handleVote('answer', answer._id, 'upvote')}
+                              disabled={voting === answer._id}
+                              aria-label="Upvote"
                             >
-                              Show Original Answer
+                              <ThumbsUp className="h-5 w-5" />
+                            </Button>
+                            <span className="font-bold text-lg text-blue font-inter min-w-[2rem] text-center">{getVoteCount(answer.votes)}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`p-1 ${hasUserVoted(answer.votes, 'downvote') ? 'text-red-600' : ''}`}
+                              onClick={() => handleVote('answer', answer._id, 'downvote')}
+                              disabled={voting === answer._id}
+                              aria-label="Downvote"
+                            >
+                              <ThumbsDown className="h-5 w-5" />
                             </Button>
                           </div>
-                        ) : (
-                          <div>
-                            <div dangerouslySetInnerHTML={{ __html: answer.content }} />
-                            {answer.eli5Content && (
+                        </div>
+
+                        {/* Answer Content */}
+                        <div className="prose max-w-none text-foreground font-inter mb-4">
+                          <div dangerouslySetInnerHTML={{ __html: answer.content }} />
+                        </div>
+
+                        {/* ELI5 Section */}
+                        <div className="prose max-w-none mb-4">
+                          {eli5Mode[answer._id] && answer.eli5Content ? (
+                            <div>
+                              <div className="bg-blue/10 border-l-4 border-blue p-4 mb-4 rounded-xl">
+                                <h4 className="text-blue font-medium mb-2 font-inter">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
+                                <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
+                              </div>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => toggleELI5(answer._id)}
-                                className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
+                                className="text-blue border-blue hover:bg-blue/10 font-inter"
                               >
-                                🤔 Show ELI5 Version
+                                Show Original Answer
                               </Button>
-                            )}
-                            {!answer.eli5Content && (
+                            </div>
+                          ) : (
+                            <div>
+                              {answer.eli5Content && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleELI5(answer._id)}
+                                  className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
+                                >
+                                  🤔 Show ELI5 Version
+                                </Button>
+                              )}
+                              {!answer.eli5Content && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleGenerateELI5(answer._id)}
+                                  disabled={generatingEli5 === answer._id}
+                                  className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
+                                >
+                                  {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions Row */}
+                        <div className="flex items-center justify-between border-t border-border pt-4 mt-4 gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <FlagButton
+                              contentType="answer"
+                              contentId={answer._id}
+                              className="text-gray-500 hover:text-red-600"
+                            />
+                            {!answer.isAccepted && isQuestionAuthor() && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleGenerateELI5(answer._id)}
-                                disabled={generatingEli5 === answer._id}
-                                className="text-blue border-blue hover:bg-blue/10 mt-2 font-inter"
+                                onClick={() => handleAcceptAnswer(answer._id)}
+                                disabled={acceptingAnswer === answer._id}
+                                className="ml-2"
                               >
-                                {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
+                                <Check className="h-4 w-4 mr-2" /> Accept Answer
                               </Button>
                             )}
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Meta */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-4 font-inter">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            <span>{answer.author.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{new Date(answer.createdAt).toLocaleDateString()}</span>
-                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <FlagButton 
-                            contentType="answer" 
-                            contentId={answer._id} 
-                            className="text-gray-500 hover:text-red-600"
-                          />
-                          {!answer.isAccepted && isQuestionAuthor() && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleAcceptAnswer(answer._id)}
-                              disabled={acceptingAnswer === answer._id}
-                            >
-                              <Check className="h-4 w-4 mr-2" />
-                              Accept Answer
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Comments Section */}
-                  <div className="mt-6">
-                    <div className="font-semibold text-gray-700 mb-2">Comments</div>
-                    <div className="space-y-2 mb-2">
-                      {(commentsByAnswer[answer._id] || []).map((comment) => (
-                        <div key={comment._id} className="flex items-start gap-2 text-sm">
-                          {comment.author.image && (
-                            <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
-                          )}
-                          <div>
-                            <span className="font-semibold text-gray-800">{comment.author.name}</span>{' '}
-                            <span className="text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                            {comment.edited && <span className="text-xs text-gray-400 ml-2">(edited)</span>}
-                            <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: highlightMentions(comment.content) }} />
-                            {session?.user?.email === comment.author.email && (
-                              <div className="flex gap-2 mt-1">
-                                <button
-                                  type="button"
-                                  className="text-blue-600 hover:underline text-xs"
-                                  onClick={() => { setEditingCommentId(comment._id); setEditCommentInput(comment.content); }}
-                                >Edit</button>
-                                <button
-                                  type="button"
-                                  className="text-red-600 hover:underline text-xs"
-                                  onClick={() => handleDeleteComment(answer._id, comment._id)}
-                                >Delete</button>
-                              </div>
-                            )}
-                            {editingCommentId === comment._id && (
-                              <form className="flex gap-2 mt-2" onSubmit={e => handleEditComment(answer._id, comment._id, e)}>
-                                <input
-                                  type="text"
-                                  className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                                  value={editCommentInput}
-                                  onChange={e => setEditCommentInput(e.target.value)}
-                                  autoFocus
-                                />
-                                <Button type="submit" size="sm">Save</Button>
-                                <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>Cancel</Button>
-                              </form>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {session ? (
-                      <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e)}>
-                        <input
-                          ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
-                          type="text"
-                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                          placeholder="Add a comment... (use @username to mention)"
-                          value={commentInputs[answer._id] || ''}
-                          onChange={e => handleCommentInputChange(answer._id, e.target.value, e)}
-                          disabled={submittingComment === answer._id}
-                        />
-                        {/* Mention dropdown */}
-                        {mentionDropdown.show && mentionDropdown.answerId === answer._id && (
-                          <div
-                            className="absolute z-50 bg-white border border-gray-200 rounded shadow-md mt-1"
-                            style={{ top: mentionDropdown.position.top, left: mentionDropdown.position.left }}
-                          >
-                            {allUsers
-                              .filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase()))
-                              .slice(0, 5)
-                              .map(u => (
-                                <div
-                                  key={u.email}
-                                  className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
-                                  onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
-                                >
-                                  {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
-                                  <span>{u.name}</span>
+                        {/* Comments Section */}
+                        <div className="mt-6 pl-2 border-l-2 border-muted">
+                          <div className="font-semibold text-muted-foreground mb-2">Comments</div>
+                          <div className="space-y-2 mb-2">
+                            {(commentsByAnswer[answer._id] || []).map((comment) => (
+                              <div key={comment._id} className="flex items-start gap-2 text-sm">
+                                {comment.author.image && (
+                                  <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
+                                )}
+                                <div>
+                                  <span className="font-semibold text-foreground">{comment.author.name}</span>{' '}
+                                  <span className="text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                  {comment.edited && <span className="text-xs text-gray-400 ml-2">(edited)</span>}
+                                  <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: highlightMentions(comment.content) }} />
+                                  {session?.user?.email === comment.author.email && (
+                                    <div className="flex gap-2 mt-1">
+                                      <button
+                                        type="button"
+                                        className="text-blue-600 hover:underline text-xs"
+                                        onClick={() => { setEditingCommentId(comment._id); setEditCommentInput(comment.content); }}
+                                      >Edit</button>
+                                      <button
+                                        type="button"
+                                        className="text-red-600 hover:underline text-xs"
+                                        onClick={() => handleDeleteComment(answer._id, comment._id)}
+                                      >Delete</button>
+                                    </div>
+                                  )}
+                                  {editingCommentId === comment._id && (
+                                    <form className="flex gap-2 mt-2" onSubmit={e => handleEditComment(answer._id, comment._id, e)}>
+                                      <input
+                                        type="text"
+                                        className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                        value={editCommentInput}
+                                        onChange={e => setEditCommentInput(e.target.value)}
+                                        autoFocus
+                                      />
+                                      <Button type="submit" size="sm">Save</Button>
+                                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>Cancel</Button>
+                                    </form>
+                                  )}
                                 </div>
-                              ))}
-                            {allUsers.filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase())).length === 0 && (
-                              <div className="px-3 py-2 text-gray-400">No users found</div>
-                            )}
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        <Button
-                          type="submit"
-                          size="sm"
-                          disabled={submittingComment === answer._id || !(commentInputs[answer._id] || '').trim()}
-                        >
-                          {submittingComment === answer._id ? 'Posting...' : 'Post'}
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="text-xs text-gray-500">Sign in to comment</div>
-                    )}
+                          {session ? (
+                            <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e)}>
+                              <input
+                                ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
+                                type="text"
+                                className="flex-1 border border-border rounded px-2 py-1 text-sm bg-background text-foreground"
+                                placeholder="Add a comment... (use @username to mention)"
+                                value={commentInputs[answer._id] || ''}
+                                onChange={e => handleCommentInputChange(answer._id, e.target.value, e)}
+                                disabled={submittingComment === answer._id}
+                              />
+                              {/* Mention dropdown */}
+                              {mentionDropdown.show && mentionDropdown.answerId === answer._id && (
+                                <div
+                                  className="absolute z-50 bg-card border border-border rounded shadow-md mt-1"
+                                  style={{ top: mentionDropdown.position.top, left: mentionDropdown.position.left }}
+                                >
+                                  {allUsers
+                                    .filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase()))
+                                    .slice(0, 5)
+                                    .map(u => (
+                                      <div
+                                        key={u.email}
+                                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
+                                        onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
+                                      >
+                                        {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
+                                        <span>{u.name}</span>
+                                      </div>
+                                    ))}
+                                  {allUsers.filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase())).length === 0 && (
+                                    <div className="px-3 py-2 text-muted-foreground">No users found</div>
+                                  )}
+                                </div>
+                              )}
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={submittingComment === answer._id || !(commentInputs[answer._id] || '').trim()}
+                              >
+                                {submittingComment === answer._id ? 'Posting...' : 'Post'}
+                              </Button>
+                            </form>
+                          ) : (
+                            <div className="text-xs text-muted-foreground">Sign in to comment</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            </>
           )}
         </div>
-
-        {/* Answer Form */}
-        {session ? (
-          isQuestionAuthor() ? (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-              <p className="text-yellow-800">You cannot answer your own question.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
-              <form onSubmit={handleSubmitAnswer}>
-                <RichTextEditor
-                  content={answerContent}
-                  onChange={setAnswerContent}
-                  placeholder="Write your answer here..."
-                />
-                <div className="flex justify-end mt-4">
-                  <Button
-                    type="submit"
-                    disabled={submittingAnswer || !answerContent.trim()}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {submittingAnswer ? 'Posting...' : 'Post Answer'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )
-        ) : (
-          <div className="bg-blue/10 border border-blue rounded-2xl p-6 text-center font-inter">
-            <p className="text-blue mb-4 font-inter">Please sign in to answer this question</p>
-            <Link href="/auth/signin">
-              <Button className="bg-blue hover:bg-blue-light font-inter">
-                Sign In to Answer
-              </Button>
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );
