@@ -10,9 +10,11 @@ import {
   TrendingUp, 
   Clock, 
   MessageSquare,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface Question {
   _id: string;
@@ -32,6 +34,7 @@ interface Question {
   views: number;
   createdAt: string;
   isDeleted: boolean;
+  acceptedAnswer?: string;
 }
 
 interface QuestionsResponse {
