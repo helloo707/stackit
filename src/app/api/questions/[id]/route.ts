@@ -8,12 +8,13 @@ import User from '@/models/User';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const question = await Question.findById(params.id)
+    const { id } = await params;
+    const question = await Question.findById(id)
       .populate('author', 'name email image')
       .populate('acceptedAnswer', 'content author votes isAccepted createdAt')
       .lean() as any;
@@ -34,13 +35,13 @@ export async function GET(
     }
 
     // Increment view count
-    await Question.findByIdAndUpdate(params.id, {
+    await Question.findByIdAndUpdate(id, {
       $inc: { views: 1 }
     });
     
     // Get answers for this question
     const answers = await Answer.find({ 
-      question: params.id,
+      question: id,
       isDeleted: false 
     })
       .populate('author', 'name email image')
