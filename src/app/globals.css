@@ -369,3 +369,18 @@ body {
   font-family: 'Orbitron', 'Inter', system-ui, sans-serif;
   letter-spacing: 0.02em;
 }
+
+/* Ensure visible bullets and numbers in the rich text editor */
+.ProseMirror ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+  padding-left: 1.5em;
+}
+.ProseMirror ol {
+  list-style-type: decimal;
+  margin-left: 1.5em;
+  padding-left: 1.5em;
+}
+.ProseMirror li {
+  margin-bottom: 0.25em;
+}
