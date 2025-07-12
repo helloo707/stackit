@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import FlagButton from '@/components/FlagButton';
 import { 
   Search, 
   MessageSquare,
@@ -451,6 +452,11 @@ export default function QuestionsPage() {
                             <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
                           )}
                         </Button>
+                        <FlagButton 
+                          contentType="question" 
+                          contentId={question._id} 
+                          className="p-1"
+                        />
                       </div>
                     </div>
                     

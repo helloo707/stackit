@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import RichTextEditor from '@/components/RichTextEditor';
+import FlagButton from '@/components/FlagButton';
 import { 
   ArrowLeft, 
   ThumbsUp, 
@@ -398,6 +399,11 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                   </>
                 )}
               </Button>
+              <FlagButton 
+                contentType="question" 
+                contentId={question._id} 
+                className="flex items-center gap-2"
+              />
             </div>
           </div>
         </div>
@@ -563,17 +569,24 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                             <span>{new Date(answer.createdAt).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        {!answer.isAccepted && isQuestionAuthor() && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleAcceptAnswer(answer._id)}
-                            disabled={acceptingAnswer === answer._id}
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Accept Answer
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <FlagButton 
+                            contentType="answer" 
+                            contentId={answer._id} 
+                            className="text-gray-500 hover:text-red-600"
+                          />
+                          {!answer.isAccepted && isQuestionAuthor() && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleAcceptAnswer(answer._id)}
+                              disabled={acceptingAnswer === answer._id}
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Accept Answer
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
