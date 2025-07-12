@@ -52,6 +52,24 @@ interface QuestionsResponse {
   };
 }
 
+interface Answer {
+  _id: string;
+  content: string;
+  eli5Content?: string;
+  author: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  votes: {
+    upvotes: string[];
+    downvotes: string[];
+  };
+  isAccepted: boolean;
+  createdAt: string;
+  isAI?: boolean; // <-- Add this line
+}
+
 // Helper functions
 function getVoteCount(votes: { upvotes: string[]; downvotes: string[] }) {
   return (votes?.upvotes?.length || 0) - (votes?.downvotes?.length || 0);
@@ -80,6 +98,11 @@ export default function QuestionsPage() {
     pages: 0,
   });
 
+  // Add new filter states
+  const [time, setTime] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [popularity, setPopularity] = useState('default');
+
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -101,6 +124,9 @@ export default function QuestionsPage() {
         limit: '10',
         sort,
         filter,
+        time,
+        status,
+        popularity,
         ...(search && { search }),
         ...(selectedTags.length > 0 && { tags: selectedTags.join(',') }),
       });
@@ -204,7 +230,7 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     fetchQuestions();
-  }, [page, filter, sort, search, selectedTags]);
+  }, [page, filter, sort, search, selectedTags, time, status, popularity]);
 
   useEffect(() => {
     // Check bookmark status for all questions when they load
@@ -294,7 +320,7 @@ export default function QuestionsPage() {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
             {/* Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
@@ -309,8 +335,50 @@ export default function QuestionsPage() {
                 <option value="no-answers">No Answers</option>
               </select>
             </div>
-
-            {/* Sort */}
+            {/* Time Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+              <select
+                value={time}
+                onChange={e => setTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Any Time</option>
+                <option value="24h">Last 24 hours</option>
+                <option value="week">Last week</option>
+                <option value="month">Last month</option>
+              </select>
+            </div>
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Any Status</option>
+                <option value="accepted">Has Accepted Answer</option>
+                <option value="no-accepted">No Accepted Answer</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            {/* Popularity Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Popularity</label>
+              <select
+                value={popularity}
+                onChange={e => setPopularity(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="default">Default</option>
+                <option value="most-upvoted">Most Upvoted</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="most-answered">Most Answered</option>
+                <option value="hot">Hot/Trending</option>
+              </select>
+            </div>
+            {/* Sort (existing) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
               <select
@@ -324,7 +392,6 @@ export default function QuestionsPage() {
                 <option value="recent">Recently Active</option>
               </select>
             </div>
-
             {/* Clear Filters */}
             <div className="flex items-end">
               {hasActiveFilters && (
