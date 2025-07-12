@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,22 +14,22 @@ import {
   X,
   Tag,
   AlertCircle,
-  Bookmark,
-  BookmarkCheck
+  Edit,
+  Trash2,
+  Plus,
+  Filter,
+  SortAsc,
+  Calendar,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { useSession } from 'next-auth/react';
 
 interface Question {
   _id: string;
   title: string;
   content: string;
-  author: {
-    name: string;
-    email: string;
-    image?: string;
-  };
   tags: string[];
   votes: {
     upvotes: string[];
@@ -60,8 +62,9 @@ function getAnswerCount(question: Question) {
   return question.answers?.length || 0;
 }
 
-export default function QuestionsPage() {
-  const { data: session } = useSession();
+export default function MyQuestionsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,27 +72,36 @@ export default function QuestionsPage() {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('newest');
   const [page, setPage] = useState(1);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Set<string>>(new Set());
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     pages: 0,
   });
+  const [deletingQuestion, setDeletingQuestion] = useState<string | null>(null);
 
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const debouncedSearch = useCallback((value: string) => {
+  const debouncedSearch = (value: string) => {
     if (searchTimeout) clearTimeout(searchTimeout);
     const timeout = setTimeout(() => {
       setSearch(value);
       setPage(1);
     }, 500);
     setSearchTimeout(timeout);
-  }, [searchTimeout]);
+  };
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    fetchQuestions();
+  }, [session, status, page, filter, sort, search]);
 
   const fetchQuestions = async () => {
     try {
@@ -101,19 +113,13 @@ export default function QuestionsPage() {
         sort,
         filter,
         ...(search && { search }),
-        ...(selectedTags.length > 0 && { tags: selectedTags.join(',') }),
       });
 
-      const response = await fetch(`/api/questions?${params}`);
+      const response = await fetch(`/api/user/questions?${params}`);
       if (response.ok) {
         const data: QuestionsResponse = await response.json();
         setQuestions(data.questions);
         setPagination(data.pagination);
-        
-        // Extract unique tags from questions
-        const tags = new Set<string>();
-        data.questions.forEach(q => q.tags.forEach(tag => tags.add(tag)));
-        setAvailableTags(Array.from(tags).sort());
       } else {
         toast.error('Failed to fetch questions');
         setError('Failed to fetch questions');
@@ -127,94 +133,31 @@ export default function QuestionsPage() {
     }
   };
 
-  const checkBookmarkStatus = async (questionId: string) => {
-    if (!session) return;
-    
-    try {
-      const response = await fetch(`/api/bookmarks/check/${questionId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setBookmarkedQuestions(prev => {
-          const newSet = new Set(prev);
-          if (data.isBookmarked) {
-            newSet.add(questionId);
-          } else {
-            newSet.delete(questionId);
-          }
-          return newSet;
-        });
-      }
-    } catch (error) {
-      console.error('Error checking bookmark status:', error);
-    }
-  };
-
-  const toggleBookmark = async (questionId: string) => {
-    if (!session) {
-      toast.error('Please sign in to bookmark questions');
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
       return;
     }
 
-    const isBookmarked = bookmarkedQuestions.has(questionId);
+    setDeletingQuestion(questionId);
 
     try {
-      if (isBookmarked) {
-        // Remove bookmark
-        const response = await fetch(`/api/bookmarks/${questionId}`, {
-          method: 'DELETE',
-        });
+      const response = await fetch(`/api/questions/${questionId}`, {
+        method: 'DELETE',
+      });
 
-        if (response.ok) {
-          setBookmarkedQuestions(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(questionId);
-            return newSet;
-          });
-          toast.success('Bookmark removed');
-        } else {
-          toast.error('Failed to remove bookmark');
-        }
+      if (response.ok) {
+        toast.success('Question deleted successfully');
+        fetchQuestions(); // Refresh the list
       } else {
-        // Add bookmark
-        const response = await fetch('/api/bookmarks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ questionId }),
-        });
-
-        if (response.ok) {
-          setBookmarkedQuestions(prev => {
-            const newSet = new Set(prev);
-            newSet.add(questionId);
-            return newSet;
-          });
-          toast.success('Question bookmarked');
-        } else {
-          const error = await response.json();
-          toast.error(error.message || 'Failed to bookmark question');
-        }
+        const error = await response.json();
+        toast.error(error.message || 'Failed to delete question');
       }
     } catch (error) {
-      toast.error('An error occurred');
+      toast.error('An error occurred while deleting the question');
+    } finally {
+      setDeletingQuestion(null);
     }
   };
-
-  useEffect(() => {
-    fetchQuestions();
-  }, [page, filter, sort, search, selectedTags]);
-
-  useEffect(() => {
-    // Check bookmark status for all questions when they load
-    if (questions.length > 0 && session) {
-      questions.forEach(question => {
-        checkBookmarkStatus(question._id);
-      });
-    }
-  }, [questions, session]);
-
-
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -227,24 +170,32 @@ export default function QuestionsPage() {
     return date.toLocaleDateString();
   };
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
-    setPage(1);
-  };
-
   const clearFilters = () => {
     setSearch('');
     setFilter('all');
     setSort('newest');
-    setSelectedTags([]);
     setPage(1);
   };
 
-  const hasActiveFilters = search || filter !== 'all' || sort !== 'newest' || selectedTags.length > 0;
+  const hasActiveFilters = search || filter !== 'all' || sort !== 'newest';
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -254,23 +205,16 @@ export default function QuestionsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Questions</h1>
+            <h1 className="text-3xl font-bold text-gray-900">My Questions</h1>
             <p className="text-gray-600 mt-1">
               {pagination.total} questions • {pagination.total > 0 ? `${Math.ceil(pagination.total / pagination.limit)} pages` : 'No questions yet'}
             </p>
           </div>
           <div className="flex gap-2">
-            {session && (
-              <Link href="/bookmarks">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <BookmarkCheck className="h-4 w-4" />
-                  My Bookmarks
-                </Button>
-              </Link>
-            )}
             <Link href="/questions/ask">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Ask Question
+                <Plus className="h-4 w-4 mr-2" />
+                Ask New Question
               </Button>
             </Link>
           </div>
@@ -284,7 +228,7 @@ export default function QuestionsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search questions by title, content, or tags..."
+                placeholder="Search your questions by title, content, or tags..."
                 defaultValue={search}
                 onChange={(e) => debouncedSearch(e.target.value)}
                 className="pl-10 pr-4"
@@ -318,9 +262,10 @@ export default function QuestionsPage() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
                 <option value="votes">Most Voted</option>
                 <option value="views">Most Viewed</option>
-                <option value="recent">Recently Active</option>
+                <option value="answers">Most Answers</option>
               </select>
             </div>
 
@@ -338,29 +283,6 @@ export default function QuestionsPage() {
               )}
             </div>
           </div>
-
-          {/* Tags */}
-          {availableTags.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.slice(0, 10).map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      selectedTags.includes(tag)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Tag className="h-3 w-3 inline mr-1" />
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Error Message */}
@@ -374,7 +296,7 @@ export default function QuestionsPage() {
         {loading ? (
           <div className="text-center py-12">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-2 text-gray-600">Loading questions...</p>
+            <p className="mt-2 text-gray-600">Loading your questions...</p>
           </div>
         ) : questions.length === 0 ? (
           <div className="text-center py-12">
@@ -383,13 +305,14 @@ export default function QuestionsPage() {
             <p className="mt-2 text-gray-600">
               {hasActiveFilters 
                 ? 'Try adjusting your search or filters'
-                : 'Be the first to ask a question!'
+                : "You haven't asked any questions yet. Start contributing to the community!"
               }
             </p>
             {!hasActiveFilters && (
               <Link href="/questions/ask" className="mt-4 inline-block">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  Ask Question
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ask Your First Question
                 </Button>
               </Link>
             )}
@@ -439,18 +362,11 @@ export default function QuestionsPage() {
                             Answered
                           </span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleBookmark(question._id)}
-                          className="p-1"
-                        >
-                          {bookmarkedQuestions.has(question._id) ? (
-                            <BookmarkCheck className="h-5 w-5 text-blue-600" />
-                          ) : (
-                            <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
-                          )}
-                        </Button>
+                        {question.acceptedAnswer && (
+                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                            Accepted
+                          </span>
+                        )}
                       </div>
                     </div>
                     
@@ -469,21 +385,38 @@ export default function QuestionsPage() {
                       ))}
                     </div>
 
-                    {/* Meta */}
+                    {/* Meta and Actions */}
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
                         <span>
                           Asked {formatDate(question.createdAt)}
                         </span>
-                        <span>
-                          by {question.isAnonymous ? 'Anonymous' : question.author.name}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <Eye className="h-4 w-4" />
+                          <span>{question.views}</span>
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{question.answers.length}</span>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Eye className="h-4 w-4" />
-                        <span>{question.views}</span>
-                        <MessageSquare className="h-4 w-4" />
-                        <span>{question.answers.length}</span>
+                        <Link href={`/questions/${question._id}/edit`}>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteQuestion(question._id)}
+                          disabled={deletingQuestion === question._id}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          {deletingQuestion === question._id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </div>
