@@ -392,8 +392,8 @@ export default function QuestionsPage() {
                   <X className="h-4 w-4 mr-2" />
                   Clear Filters
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Error Message */}

@@ -469,7 +469,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     return roots;
   }
 
-  function renderComments(comments: CommentTreeNode[], answerId: string, level = 0): JSX.Element[] {
+  function renderComments(comments: CommentTreeNode[], answerId: string, level = 0): React.ReactElement[] {
     return comments.map(comment => (
       <div key={comment._id} style={{ marginLeft: level * 24 }} className="flex items-start gap-2 text-sm mt-2">
         {comment.author.image && (
