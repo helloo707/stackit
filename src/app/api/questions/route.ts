@@ -8,6 +8,7 @@ import { prioritizeQuestions } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("question function called")
     const session = await getServerSession(authOptions);
     console.log(session);
     if (!session?.user) {
