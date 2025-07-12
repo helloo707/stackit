@@ -7,12 +7,14 @@ import User from '@/models/User';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const answer = await Answer.findById(params.id)
+    const { id } = await params;
+    
+    const answer = await Answer.findById(id)
       .populate('author', 'name email image')
       .populate('question', 'title')
       .lean();
@@ -24,7 +26,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(answer);
+    return NextResponse.json({ answer });
   } catch (error) {
     console.error('Error fetching answer:', error);
     return NextResponse.json(
@@ -36,7 +38,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -47,6 +49,7 @@ export async function PUT(
 
     await dbConnect();
     
+    const { id } = await params;
     const { content } = await request.json();
 
     if (!content?.trim()) {
@@ -63,7 +66,7 @@ export async function PUT(
     }
 
     // Check if answer exists and user is the author
-    const answer = await Answer.findById(params.id);
+    const answer = await Answer.findById(id);
     if (!answer) {
       return NextResponse.json(
         { message: 'Answer not found' },
@@ -80,8 +83,11 @@ export async function PUT(
 
     // Update answer
     const updatedAnswer = await Answer.findByIdAndUpdate(
-      params.id,
-      { content: content.trim() },
+      id,
+      {
+        content,
+        updatedAt: new Date(),
+      },
       { new: true }
     ).populate('author', 'name email image');
 
@@ -100,7 +106,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -111,6 +117,8 @@ export async function DELETE(
 
     await dbConnect();
     
+    const { id } = await params;
+    
     // Get user
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -118,7 +126,7 @@ export async function DELETE(
     }
 
     // Check if answer exists and user is the author
-    const answer = await Answer.findById(params.id);
+    const answer = await Answer.findById(id);
     if (!answer) {
       return NextResponse.json(
         { message: 'Answer not found' },
@@ -134,7 +142,7 @@ export async function DELETE(
     }
 
     // Soft delete answer
-    await Answer.findByIdAndUpdate(params.id, {
+    await Answer.findByIdAndUpdate(id, {
       isDeleted: true,
       deletedAt: new Date(),
     });

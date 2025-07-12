@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,6 +19,7 @@ export async function POST(
 
     await dbConnect();
     
+    const { id } = await params;
     const { voteType } = await request.json(); // 'upvote' or 'downvote'
 
     if (!voteType || !['upvote', 'downvote'].includes(voteType)) {
@@ -35,7 +36,7 @@ export async function POST(
     }
 
     // Check if answer exists
-    const answer = await Answer.findById(params.id);
+    const answer = await Answer.findById(id);
     if (!answer) {
       return NextResponse.json(
         { message: 'Answer not found' },
@@ -51,46 +52,55 @@ export async function POST(
       );
     }
 
-    const userId = user._id;
+    const userId = user._id.toString();
     const upvotes = answer.votes.upvotes.map((id: mongoose.Types.ObjectId) => id.toString());
     const downvotes = answer.votes.downvotes.map((id: mongoose.Types.ObjectId) => id.toString());
 
-    let updateQuery: Record<string, unknown> = {};
+    let updatedAnswer;
 
     if (voteType === 'upvote') {
-      if (upvotes.includes(userId.toString())) {
+      if (upvotes.includes(userId)) {
         // Remove upvote
-        updateQuery = {
-          $pull: { 'votes.upvotes': userId }
-        };
+        updatedAnswer = await Answer.findByIdAndUpdate(
+          id,
+          {
+            $pull: { 'votes.upvotes': user._id }
+          },
+          { new: true }
+        ).populate('author', 'name email image');
       } else {
-        // Add upvote and remove downvote if exists
-        updateQuery = {
-          $addToSet: { 'votes.upvotes': userId },
-          $pull: { 'votes.downvotes': userId }
-        };
+        // Add upvote, remove downvote if exists
+        updatedAnswer = await Answer.findByIdAndUpdate(
+          id,
+          {
+            $addToSet: { 'votes.upvotes': user._id },
+            $pull: { 'votes.downvotes': user._id }
+          },
+          { new: true }
+        ).populate('author', 'name email image');
       }
     } else {
-      if (downvotes.includes(userId.toString())) {
+      if (downvotes.includes(userId)) {
         // Remove downvote
-        updateQuery = {
-          $pull: { 'votes.downvotes': userId }
-        };
+        updatedAnswer = await Answer.findByIdAndUpdate(
+          id,
+          {
+            $pull: { 'votes.downvotes': user._id }
+          },
+          { new: true }
+        ).populate('author', 'name email image');
       } else {
-        // Add downvote and remove upvote if exists
-        updateQuery = {
-          $addToSet: { 'votes.downvotes': userId },
-          $pull: { 'votes.upvotes': userId }
-        };
+        // Add downvote, remove upvote if exists
+        updatedAnswer = await Answer.findByIdAndUpdate(
+          id,
+          {
+            $addToSet: { 'votes.downvotes': user._id },
+            $pull: { 'votes.upvotes': user._id }
+          },
+          { new: true }
+        ).populate('author', 'name email image');
       }
     }
-
-    // Update answer votes
-    const updatedAnswer = await Answer.findByIdAndUpdate(
-      params.id,
-      updateQuery,
-      { new: true }
-    ).populate('author', 'name email image');
 
     return NextResponse.json({
       message: 'Vote updated successfully',

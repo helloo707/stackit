@@ -8,7 +8,7 @@ import User from '@/models/User';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,6 +19,7 @@ export async function POST(
 
     await dbConnect();
     
+    const { id } = await params;
     const { answerId } = await request.json();
 
     if (!answerId) {
@@ -35,7 +36,7 @@ export async function POST(
     }
 
     // Check if question exists and user is the author
-    const question = await Question.findById(params.id);
+    const question = await Question.findById(id);
     if (!question) {
       return NextResponse.json(
         { message: 'Question not found' },
@@ -59,29 +60,34 @@ export async function POST(
       );
     }
 
-    if (answer.question.toString() !== params.id) {
+    if (answer.question.toString() !== id) {
       return NextResponse.json(
         { message: 'Answer does not belong to this question' },
         { status: 400 }
       );
     }
 
-    // Unaccept any previously accepted answer
+    // Unaccept any previously accepted answer for this question
     await Answer.updateMany(
-      { question: params.id },
+      { question: id },
       { isAccepted: false }
     );
 
     // Accept the new answer
-    await Answer.findByIdAndUpdate(answerId, { isAccepted: true });
+    const updatedAnswer = await Answer.findByIdAndUpdate(
+      answerId,
+      { isAccepted: true },
+      { new: true }
+    ).populate('author', 'name email image');
 
-    // Update question's accepted answer
-    await Question.findByIdAndUpdate(params.id, {
-      acceptedAnswer: answerId
+    // Update question with accepted answer
+    await Question.findByIdAndUpdate(id, {
+      acceptedAnswer: answerId,
     });
 
     return NextResponse.json({
       message: 'Answer accepted successfully',
+      answer: updatedAnswer,
     });
   } catch (error) {
     console.error('Error accepting answer:', error);

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Question from '@/models/Question';
 import User from '@/models/User';
+import { prioritizeQuestions } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,12 +115,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query
-    const questions = await Question.find(query)
+    let questions = await Question.find(query)
       .populate('author', 'name email image')
       .sort(sortQuery)
       .skip(skip)
       .limit(limit)
       .lean();
+
+    // Apply AI prioritization if no specific sort is requested and no search/filter
+    if (sort === 'newest' && !search && filter === 'all' && process.env.GEMINI_API_KEY) {
+      try {
+        questions = await prioritizeQuestions(questions);
+      } catch (error) {
+        console.error('AI prioritization failed, using default sorting:', error);
+      }
+    }
 
     // Get total count
     const total = await Question.countDocuments(query);

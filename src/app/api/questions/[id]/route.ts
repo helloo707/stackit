@@ -8,17 +8,19 @@ import User from '@/models/User';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
+    const { id } = await params;
+    
     // Increment view count
-    await Question.findByIdAndUpdate(params.id, {
+    await Question.findByIdAndUpdate(id, {
       $inc: { views: 1 }
     });
     
-    const question = await Question.findById(params.id)
+    const question = await Question.findById(id)
       .populate('author', 'name email image')
       .populate('acceptedAnswer', 'content author votes isAccepted createdAt')
       .lean();
@@ -32,7 +34,7 @@ export async function GET(
 
     // Get answers for this question
     const answers = await Answer.find({ 
-      question: params.id,
+      question: id,
       isDeleted: false 
     })
       .populate('author', 'name email image')
@@ -54,7 +56,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -65,6 +67,7 @@ export async function PUT(
 
     await dbConnect();
     
+    const { id } = await params;
     const { title, content, tags } = await request.json();
 
     if (!title?.trim() || !content?.trim() || !tags?.length) {
@@ -81,7 +84,7 @@ export async function PUT(
     }
 
     // Check if question exists and user is the author
-    const question = await Question.findById(params.id);
+    const question = await Question.findById(id);
     if (!question) {
       return NextResponse.json(
         { message: 'Question not found' },
@@ -98,7 +101,7 @@ export async function PUT(
 
     // Update question
     const updatedQuestion = await Question.findByIdAndUpdate(
-      params.id,
+      id,
       {
         title: title.trim(),
         content,
@@ -122,7 +125,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -133,6 +136,8 @@ export async function DELETE(
 
     await dbConnect();
     
+    const { id } = await params;
+    
     // Get user
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -140,7 +145,7 @@ export async function DELETE(
     }
 
     // Check if question exists and user is the author
-    const question = await Question.findById(params.id);
+    const question = await Question.findById(id);
     if (!question) {
       return NextResponse.json(
         { message: 'Question not found' },
@@ -156,7 +161,7 @@ export async function DELETE(
     }
 
     // Soft delete question
-    await Question.findByIdAndUpdate(params.id, {
+    await Question.findByIdAndUpdate(id, {
       isDeleted: true,
       deletedAt: new Date(),
     });

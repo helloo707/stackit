@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
@@ -23,6 +23,7 @@ import toast from 'react-hot-toast';
 interface Answer {
   _id: string;
   content: string;
+  eli5Content?: string;
   author: {
     name: string;
     email: string;
@@ -61,9 +62,10 @@ interface QuestionData {
   answers: Answer[];
 }
 
-export default function QuestionPage({ params }: { params: { id: string } }) {
+export default function QuestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const { id } = use(params);
   
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,15 +73,17 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [voting, setVoting] = useState<string | null>(null);
   const [acceptingAnswer, setAcceptingAnswer] = useState<string | null>(null);
+  const [eli5Mode, setEli5Mode] = useState<Record<string, boolean>>({});
+  const [generatingEli5, setGeneratingEli5] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestion();
-  }, [params.id]);
+  }, [id]);
 
   const fetchQuestion = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/questions/${params.id}`);
+      const response = await fetch(`/api/questions/${id}`);
       if (response.ok) {
         const data: QuestionData = await response.json();
         setQuestionData(data);
@@ -116,7 +120,7 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          questionId: params.id,
+          questionId: id,
           content: answerContent.trim(),
         }),
       });
@@ -179,7 +183,7 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
     setAcceptingAnswer(answerId);
 
     try {
-      const response = await fetch(`/api/questions/${params.id}/accept-answer`, {
+      const response = await fetch(`/api/questions/${id}/accept-answer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,6 +203,43 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
     } finally {
       setAcceptingAnswer(null);
     }
+  };
+
+  const handleGenerateELI5 = async (answerId: string) => {
+    if (!session) {
+      toast.error('Please sign in to generate ELI5');
+      return;
+    }
+
+    setGeneratingEli5(answerId);
+
+    try {
+      const response = await fetch(`/api/answers/${answerId}/eli5`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast.success('ELI5 generated successfully!');
+        fetchQuestion(); // Refresh to show ELI5 content
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to generate ELI5');
+      }
+    } catch {
+      toast.error('An error occurred while generating ELI5');
+    } finally {
+      setGeneratingEli5(null);
+    }
+  };
+
+  const toggleELI5 = (answerId: string) => {
+    setEli5Mode(prev => ({
+      ...prev,
+      [answerId]: !prev[answerId]
+    }));
   };
 
   const getVoteCount = (votes: { upvotes: string[]; downvotes: string[] }) => {
@@ -372,7 +413,49 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
                         </div>
                       )}
                       
-                      <div className="prose max-w-none mb-4" dangerouslySetInnerHTML={{ __html: answer.content }} />
+                      <div className="prose max-w-none mb-4">
+                        {eli5Mode[answer._id] && answer.eli5Content ? (
+                          <div>
+                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                              <h4 className="text-blue-800 font-medium mb-2">🤔 ELI5 (Explain Like I&apos;m 5)</h4>
+                              <div dangerouslySetInnerHTML={{ __html: answer.eli5Content }} />
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleELI5(answer._id)}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            >
+                              Show Original Answer
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div dangerouslySetInnerHTML={{ __html: answer.content }} />
+                            {answer.eli5Content && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleELI5(answer._id)}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                              >
+                                🤔 Show ELI5 Version
+                              </Button>
+                            )}
+                            {!answer.eli5Content && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGenerateELI5(answer._id)}
+                                disabled={generatingEli5 === answer._id}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50 mt-2"
+                              >
+                                {generatingEli5 === answer._id ? 'Generating...' : '🤔 Generate ELI5'}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Meta */}
                       <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
