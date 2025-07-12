@@ -21,6 +21,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import React, { useRef } from 'react';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism.css';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-c';
+import 'prismjs/components/prism-cpp';
+import 'prismjs/components/prism-markup';
 
 interface Answer {
   _id: string;
@@ -64,6 +74,23 @@ interface QuestionData {
   answers: Answer[];
 }
 
+interface Comment {
+  _id: string;
+  answerId: string;
+  author: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  content: string;
+  createdAt: string;
+  edited?: boolean;
+}
+
+function highlightMentions(text: string) {
+  return text.replace(/@([\w]+)/g, '<span class="text-blue-600 font-semibold">@$1</span>');
+}
+
 export default function QuestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -78,6 +105,14 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const [eli5Mode, setEli5Mode] = useState<Record<string, boolean>>({});
   const [generatingEli5, setGeneratingEli5] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [commentsByAnswer, setCommentsByAnswer] = useState<Record<string, Comment[]>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [submittingComment, setSubmittingComment] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<{ name: string; email: string; image?: string }[]>([]);
+  const [mentionDropdown, setMentionDropdown] = useState<{ answerId: string; show: boolean; query: string; position: { top: number; left: number } }>({ answerId: '', show: false, query: '', position: { top: 0, left: 0 } });
+  const commentInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentInput, setEditCommentInput] = useState('');
 
   useEffect(() => {
     fetchQuestion();
@@ -88,6 +123,26 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
       checkBookmarkStatus();
     }
   }, [questionData?.question._id, session]);
+
+  useEffect(() => {
+    // Fetch users for mention suggestions
+    fetch('/api/user/list')
+      .then(res => res.json())
+      .then(data => setAllUsers(data.users || []));
+  }, []);
+
+  useEffect(() => {
+    if (questionData?.answers) {
+      questionData.answers.forEach((answer) => {
+        fetchComments(answer._id);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionData]);
+
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [questionData, commentsByAnswer]);
 
   const fetchQuestion = async () => {
     try {
@@ -116,8 +171,8 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         const data = await response.json();
         setIsBookmarked(data.isBookmarked);
       }
-    } catch (error) {
-      console.error('Error checking bookmark status:', error);
+    } catch {
+      toast.error('An error occurred');
     }
   };
 
@@ -154,11 +209,10 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
           setIsBookmarked(true);
           toast.success('Question bookmarked');
         } else {
-          const error = await response.json();
-          toast.error(error.message || 'Failed to bookmark question');
+          toast.error('Failed to bookmark question');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred');
     }
   };
@@ -195,8 +249,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         setAnswerContent('');
         fetchQuestion(); // Refresh to show new answer
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to post answer');
+        toast.error('Failed to post answer');
       }
     } catch {
       toast.error('An error occurred while posting your answer');
@@ -229,8 +282,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
       if (response.ok) {
         fetchQuestion(); // Refresh to show updated votes
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to vote');
+        toast.error('Failed to vote');
       }
     } catch {
       toast.error('An error occurred while voting');
@@ -260,8 +312,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         toast.success('Answer accepted!');
         fetchQuestion(); // Refresh to show accepted answer
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to accept answer');
+        toast.error('Failed to accept answer');
       }
     } catch {
       toast.error('An error occurred while accepting the answer');
@@ -290,8 +341,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         toast.success('ELI5 generated successfully!');
         fetchQuestion(); // Refresh to show ELI5 content
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to generate ELI5');
+        toast.error('Failed to generate ELI5');
       }
     } catch {
       toast.error('An error occurred while generating ELI5');
@@ -326,6 +376,141 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     return new Date(dateString).toLocaleDateString();
   };
 
+  const fetchComments = async (answerId: string) => {
+    try {
+      const res = await fetch(`/api/comments?answerId=${answerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCommentsByAnswer((prev) => ({ ...prev, [answerId]: data.comments }));
+      }
+    } catch {
+      // Optionally handle error
+    }
+  };
+
+  const handleSubmitComment = async (answerId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session) return;
+    const content = commentInputs[answerId]?.trim();
+    if (!content) return;
+    setSubmittingComment(answerId);
+    // Parse mentions (usernames after @)
+    const mentionMatches = content.match(/@([\w]+)/g) || [];
+    const mentionedNames = mentionMatches.map(m => m.slice(1));
+    // Map usernames to user objects
+    const mentionedUsers = allUsers.filter(u => mentionedNames.includes(u.name));
+    const mentions = mentionedUsers.map(u => u.email); // Or use user IDs if available
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answerId, content, mentions }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCommentsByAnswer((prev) => ({
+          ...prev,
+          [answerId]: [...(prev[answerId] || []), data.comment],
+        }));
+        setCommentInputs((prev) => ({ ...prev, [answerId]: '' }));
+      } else {
+        toast.error('Failed to post comment');
+      }
+    } catch {
+      toast.error('An error occurred while posting your comment');
+    } finally {
+      setSubmittingComment(null);
+    }
+  };
+
+  const handleCommentInputChange = (answerId: string, value: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    setCommentInputs(prev => ({ ...prev, [answerId]: value }));
+    // Detect @mention
+    const input = e.target;
+    const cursorPos = input.selectionStart || 0;
+    const textBefore = value.slice(0, cursorPos);
+    const match = /@([\w]*)$/.exec(textBefore);
+    if (match) {
+      // Get position for dropdown
+      const rect = input.getBoundingClientRect();
+      setMentionDropdown({
+        answerId,
+        show: true,
+        query: match[1],
+        position: { top: rect.bottom + window.scrollY, left: rect.left + window.scrollX },
+      });
+    } else {
+      setMentionDropdown(prev => ({ ...prev, show: false }));
+    }
+  };
+
+  const handleMentionSelect = (answerId: string, username: string) => {
+    const input = commentInputRefs.current[answerId];
+    if (!input) return;
+    const value = commentInputs[answerId] || '';
+    const cursorPos = input.selectionStart || 0;
+    const textBefore = value.slice(0, cursorPos);
+    const match = /@([\w]*)$/.exec(textBefore);
+    if (match) {
+      const start = match.index;
+      const newValue = value.slice(0, start) + '@' + username + ' ' + value.slice(cursorPos);
+      setCommentInputs(prev => ({ ...prev, [answerId]: newValue }));
+      setMentionDropdown(prev => ({ ...prev, show: false }));
+      setTimeout(() => {
+        input.focus();
+        input.setSelectionRange(start + username.length + 2, start + username.length + 2);
+      }, 0);
+    }
+  };
+
+  const handleDeleteComment = async (answerId: string, commentId: string) => {
+    if (!window.confirm('Delete this comment?')) return;
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId }),
+      });
+      if (res.ok) {
+        setCommentsByAnswer(prev => ({
+          ...prev,
+          [answerId]: (prev[answerId] || []).filter(c => c._id !== commentId),
+        }));
+      } else {
+        toast.error('Failed to delete comment');
+      }
+    } catch {
+      toast.error('An error occurred while deleting the comment');
+    }
+  };
+
+  const handleEditComment = async (answerId: string, commentId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCommentInput.trim()) return;
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId, content: editCommentInput }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCommentsByAnswer(prev => ({
+          ...prev,
+          [answerId]: (prev[answerId] || []).map(c =>
+            c._id === commentId ? { ...c, ...data.comment } : c
+          ),
+        }));
+        setEditingCommentId(null);
+        setEditCommentInput('');
+      } else {
+        toast.error('Failed to edit comment');
+      }
+    } catch {
+      toast.error('An error occurred while editing the comment');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -349,6 +534,12 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   }
 
   const { question, answers } = questionData;
+
+  // Filter out duplicate answers by _id
+  const uniqueAnswers = answers.filter(
+    (answer, index, self) =>
+      index === self.findIndex((a) => a._id === answer._id)
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -456,18 +647,18 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {answers.length} Answer{answers.length !== 1 ? 's' : ''}
+              {uniqueAnswers.length} Answer{uniqueAnswers.length !== 1 ? 's' : ''}
             </h2>
           </div>
 
-          {answers.length === 0 ? (
+          {uniqueAnswers.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-4">No answers yet. Be the first to answer this question!</p>
             </div>
           ) : (
             <div className="space-y-6">
-              {answers.map((answer) => (
+              {uniqueAnswers.map((answer) => (
                 <div key={answer._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex gap-4">
                     {/* Vote buttons */}
@@ -502,11 +693,6 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
                     {/* Answer content */}
                     <div className="flex-1">
-                      <div 
-                        className="prose max-w-none"
-                        dangerouslySetInnerHTML={{ __html: answer.content }}
-                      />
-                      
                       <div className="prose max-w-none mb-4">
                         {eli5Mode[answer._id] && answer.eli5Content ? (
                           <div>
@@ -577,6 +763,99 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
                       </div>
                     </div>
                   </div>
+
+                  {/* Comments Section */}
+                  <div className="mt-6">
+                    <div className="font-semibold text-gray-700 mb-2">Comments</div>
+                    <div className="space-y-2 mb-2">
+                      {(commentsByAnswer[answer._id] || []).map((comment) => (
+                        <div key={comment._id} className="flex items-start gap-2 text-sm">
+                          {comment.author.image && (
+                            <img src={comment.author.image} alt={comment.author.name} className="w-6 h-6 rounded-full" />
+                          )}
+                          <div>
+                            <span className="font-semibold text-gray-800">{comment.author.name}</span>{' '}
+                            <span className="text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                            {comment.edited && <span className="text-xs text-gray-400 ml-2">(edited)</span>}
+                            <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: highlightMentions(comment.content) }} />
+                            {session?.user?.email === comment.author.email && (
+                              <div className="flex gap-2 mt-1">
+                                <button
+                                  type="button"
+                                  className="text-blue-600 hover:underline text-xs"
+                                  onClick={() => { setEditingCommentId(comment._id); setEditCommentInput(comment.content); }}
+                                >Edit</button>
+                                <button
+                                  type="button"
+                                  className="text-red-600 hover:underline text-xs"
+                                  onClick={() => handleDeleteComment(answer._id, comment._id)}
+                                >Delete</button>
+                              </div>
+                            )}
+                            {editingCommentId === comment._id && (
+                              <form className="flex gap-2 mt-2" onSubmit={e => handleEditComment(answer._id, comment._id, e)}>
+                                <input
+                                  type="text"
+                                  className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                  value={editCommentInput}
+                                  onChange={e => setEditCommentInput(e.target.value)}
+                                  autoFocus
+                                />
+                                <Button type="submit" size="sm">Save</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>Cancel</Button>
+                              </form>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {session ? (
+                      <form className="flex gap-2 mt-2" onSubmit={e => handleSubmitComment(answer._id, e)}>
+                        <input
+                          ref={(el: HTMLInputElement | null) => { commentInputRefs.current[answer._id] = el; }}
+                          type="text"
+                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                          placeholder="Add a comment... (use @username to mention)"
+                          value={commentInputs[answer._id] || ''}
+                          onChange={e => handleCommentInputChange(answer._id, e.target.value, e)}
+                          disabled={submittingComment === answer._id}
+                        />
+                        {/* Mention dropdown */}
+                        {mentionDropdown.show && mentionDropdown.answerId === answer._id && (
+                          <div
+                            className="absolute z-50 bg-white border border-gray-200 rounded shadow-md mt-1"
+                            style={{ top: mentionDropdown.position.top, left: mentionDropdown.position.left }}
+                          >
+                            {allUsers
+                              .filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase()))
+                              .slice(0, 5)
+                              .map(u => (
+                                <div
+                                  key={u.email}
+                                  className="px-3 py-2 hover:bg-blue-100 cursor-pointer flex items-center gap-2"
+                                  onMouseDown={e => { e.preventDefault(); handleMentionSelect(answer._id, u.name); }}
+                                >
+                                  {u.image && <img src={u.image} alt={u.name} className="w-5 h-5 rounded-full" />}
+                                  <span>{u.name}</span>
+                                </div>
+                              ))}
+                            {allUsers.filter(u => u.name.toLowerCase().includes(mentionDropdown.query.toLowerCase())).length === 0 && (
+                              <div className="px-3 py-2 text-gray-400">No users found</div>
+                            )}
+                          </div>
+                        )}
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={submittingComment === answer._id || !(commentInputs[answer._id] || '').trim()}
+                        >
+                          {submittingComment === answer._id ? 'Posting...' : 'Post'}
+                        </Button>
+                      </form>
+                    ) : (
+                      <div className="text-xs text-gray-500">Sign in to comment</div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -585,25 +864,31 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
         {/* Answer Form */}
         {session ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
-            <form onSubmit={handleSubmitAnswer}>
-              <RichTextEditor
-                content={answerContent}
-                onChange={setAnswerContent}
-                placeholder="Write your answer here..."
-              />
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="submit"
-                  disabled={submittingAnswer || !answerContent.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {submittingAnswer ? 'Posting...' : 'Post Answer'}
-                </Button>
-              </div>
-            </form>
-          </div>
+          isQuestionAuthor() ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <p className="text-yellow-800">You cannot answer your own question.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
+              <form onSubmit={handleSubmitAnswer}>
+                <RichTextEditor
+                  content={answerContent}
+                  onChange={setAnswerContent}
+                  placeholder="Write your answer here..."
+                />
+                <div className="flex justify-end mt-4">
+                  <Button
+                    type="submit"
+                    disabled={submittingAnswer || !answerContent.trim()}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {submittingAnswer ? 'Posting...' : 'Post Answer'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )
         ) : (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
             <p className="text-blue-800 mb-4">Please sign in to answer this question</p>
