@@ -93,16 +93,35 @@ export async function PUT(
         break;
 
       case 'ban-user':
-        const contentAuthor = flag.contentType === 'question' 
-          ? (flag.contentId as any).author 
-          : (flag.contentId as any).author;
+        let contentAuthor;
         
-        await User.findByIdAndUpdate(contentAuthor, {
-          isBanned: true,
-          bannedAt: new Date(),
-          banReason: `Content flagged as ${flag.reason}`,
-        });
-        moderationResult = { action: 'ban-user', userId: contentAuthor };
+        // Fetch the content to get the author
+        if (flag.contentType === 'question') {
+          const question = await Question.findById(flag.contentId);
+          if (question) {
+            contentAuthor = question.author;
+          }
+        } else {
+          const answer = await Answer.findById(flag.contentId);
+          if (answer) {
+            contentAuthor = answer.author;
+          }
+        }
+        
+        if (contentAuthor) {
+          await User.findByIdAndUpdate(contentAuthor, {
+            isBanned: true,
+            bannedAt: new Date(),
+            banReason: `Content flagged as ${flag.reason}`,
+            bannedBy: user._id,
+          });
+          moderationResult = { action: 'ban-user', userId: contentAuthor };
+        } else {
+          return NextResponse.json(
+            { message: 'Content author not found' },
+            { status: 404 }
+          );
+        }
         break;
 
       case 'dismiss':

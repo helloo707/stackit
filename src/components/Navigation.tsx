@@ -18,7 +18,8 @@ import {
   MessageSquare,
   Shield,
   Flag,
-  Trash2
+  Trash2,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
@@ -233,24 +234,6 @@ export default function Navigation() {
                               Admin Dashboard
                             </Button>
                           </Link>
-                          <Link href="/admin/questions">
-                            <Button variant="ghost" size="sm" className="w-full justify-start">
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Manage Questions
-                            </Button>
-                          </Link>
-                          <Link href="/admin/flags">
-                            <Button variant="ghost" size="sm" className="w-full justify-start">
-                              <Flag className="h-4 w-4 mr-2" />
-                              Flagged Content
-                            </Button>
-                          </Link>
-                          <Link href="/admin/deleted-content">
-                            <Button variant="ghost" size="sm" className="w-full justify-start">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Deleted Content
-                            </Button>
-                          </Link>
                         </>
                       )}
                       
@@ -388,36 +371,6 @@ export default function Navigation() {
                         >
                           <Shield className="h-4 w-4 mr-2" />
                           Admin Dashboard
-                        </Button>
-                      </Link>
-                      <Link href="/admin/questions">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`w-full justify-start ${isActive('/admin/questions') ? 'bg-blue-50 text-blue-700' : ''}`}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Manage Questions
-                        </Button>
-                      </Link>
-                      <Link href="/admin/flags">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`w-full justify-start ${isActive('/admin/flags') ? 'bg-blue-50 text-blue-700' : ''}`}
-                        >
-                          <Flag className="h-4 w-4 mr-2" />
-                          Flagged Content
-                        </Button>
-                      </Link>
-                      <Link href="/admin/deleted-content">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={`w-full justify-start ${isActive('/admin/deleted-content') ? 'bg-blue-50 text-blue-700' : ''}`}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Deleted Content
                         </Button>
                       </Link>
                     </>

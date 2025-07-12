@@ -8,6 +8,10 @@ export interface IUser extends Document {
   role: 'guest' | 'user' | 'admin';
   reputation: number;
   bookmarks: mongoose.Types.ObjectId[];
+  isBanned: boolean;
+  bannedAt?: Date;
+  banReason?: string;
+  bannedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +45,20 @@ const UserSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId,
     ref: 'Question',
   }],
+  isBanned: {
+    type: Boolean,
+    default: false,
+  },
+  bannedAt: {
+    type: Date,
+  },
+  banReason: {
+    type: String,
+  },
+  bannedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
 }, {
   timestamps: true,
 });

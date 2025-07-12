@@ -15,7 +15,8 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,6 +31,7 @@ interface FlaggedContent {
       name: string;
       email: string;
       image?: string;
+      role?: string; // Added role for ban functionality
     };
     tags?: string[];
     question?: {
@@ -371,6 +373,17 @@ export default function AdminFlagsPage() {
                         <Trash2 className="h-4 w-4" />
                         Delete Content
                       </Button>
+                      {flag.contentId.author && flag.contentId.author.role !== 'admin' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleModeration(flag._id, 'ban-user', 'resolved')}
+                          className="flex items-center gap-2"
+                        >
+                          <Ban className="h-4 w-4" />
+                          Ban User
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
